@@ -11,81 +11,115 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #0a0a12; color: #e8eaed; font-family: 'Noto Sans KR', sans-serif; height: 100vh; overflow: hidden; }
 
-.app { display: flex; flex-direction: column; height: 100vh; padding-top: 120px; }
+/* ── Standby ↔ Replay 전환 ── */
+.cyber-standby { transition: opacity 0.6s; }
+.cyber-standby.hidden { opacity: 0; pointer-events: none; position: absolute; }
+.replay-app { display: none; height: calc(100vh - 120px); width: 100vw; margin-top: 120px; }
+.replay-app.active { display: flex; }
 
-/* 토론 선택 화면 */
-.select-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 3vh; }
-.select-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.5rem, 3vw, 2.5rem); color: var(--cyan); text-align: center; margin-bottom: 1vh; }
-.select-topic { font-size: clamp(1rem, 1.5vw, 1.3rem); color: rgba(255,255,255,0.5); text-align: center; max-width: 600px; line-height: 1.7; margin-bottom: 2vh; }
-.select-cards { display: flex; gap: 3vw; }
-.select-card {
-  padding: 3vh 3vw; border-radius: 12px; cursor: pointer; text-align: center;
-  min-width: 220px; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+/* ── 3패널 레이아웃 ── */
+.panel-left {
+  flex: 0 0 35%; height: 100%; overflow-y: auto; padding: 1.5vh 1.5vw;
+  border-right: 1px solid rgba(0,240,255,0.08);
 }
-.select-card:hover { transform: translateY(-4px); }
-.select-card.pro { border-color: rgba(0,240,255,0.2); }
-.select-card.pro:hover { border-color: var(--cyan); background: rgba(0,240,255,0.06); }
-.select-card.con { border-color: rgba(255,0,170,0.2); }
-.select-card.con:hover { border-color: var(--magenta); background: rgba(255,0,170,0.06); }
-.select-card .sc-result { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; margin-bottom: 1vh; }
-.select-card.pro .sc-result { color: var(--cyan); }
-.select-card.con .sc-result { color: var(--magenta); }
-.select-card .sc-label { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5vh; }
-.select-card .sc-desc { font-size: 0.85rem; color: rgba(255,255,255,0.4); }
-.select-hint { font-size: 0.9rem; color: rgba(255,255,255,0.3); margin-top: 2vh; }
+.panel-center {
+  flex: 1; height: 100%; display: flex; flex-direction: column;
+  align-items: center; padding: 2vh 2vw; overflow-y: auto;
+}
+.panel-right {
+  flex: 0 0 22%; height: 100%; padding: 1.5vh 1.2vw;
+  border-left: 1px solid rgba(0,240,255,0.08); overflow-y: auto;
+}
 
-/* 재생 화면 */
-.replay-screen { display: none; flex: 1; flex-direction: column; }
-.replay-screen.active { display: flex; }
-
-.replay-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1.5vh 3vw; border-bottom: 1px solid rgba(0,240,255,0.08); flex-shrink: 0;
-}
-.replay-phase { font-family: 'Orbitron', sans-serif; font-size: 0.9rem; color: var(--cyan); }
-.replay-turn { font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: rgba(255,255,255,0.4); }
-.replay-controls { display: flex; gap: 1vw; align-items: center; }
-.replay-btn {
-  padding: 0.5vh 1.5vw; border: 1px solid rgba(0,240,255,0.2); background: none;
-  color: var(--cyan); border-radius: 4px; cursor: pointer; font-size: 0.8rem;
-  font-family: 'Share Tech Mono', monospace; transition: all 0.2s;
-}
-.replay-btn:hover { background: rgba(0,240,255,0.1); }
-.replay-btn.active { background: rgba(0,240,255,0.15); border-color: var(--cyan); }
-
-/* 채팅 로그 */
-.chat-log { flex: 1; overflow-y: auto; padding: 2vh 3vw; }
-.chat-msg { margin-bottom: 1.5vh; animation: msgIn 0.4s ease-out; }
-@keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.chat-agent {
-  font-size: 0.8rem; font-weight: 700; margin-bottom: 0.3vh;
-  display: flex; align-items: center; gap: 0.5vw;
-}
-.chat-agent .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+/* ── 좌: 토론 로그 ── */
+.chat-msg { margin-bottom: 1.2vh; animation: msgIn 0.4s ease-out; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.chat-agent { font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.4vw; margin-bottom: 0.2vh; }
+.chat-agent .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .chat-agent .dot.pro { background: var(--cyan); }
 .chat-agent .dot.con { background: var(--magenta); }
 .chat-agent .dot.neutral { background: rgba(255,255,255,0.3); }
-.chat-text { font-size: clamp(0.95rem, 1.2vw, 1.1rem); color: rgba(255,255,255,0.75); line-height: 1.7; padding-left: 1.2vw; }
+.chat-agent .turn-num { opacity: 0.3; font-size: 0.65rem; font-family: 'Share Tech Mono', monospace; }
+.chat-text { font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.6; padding-left: 1vw; }
 .chat-phase-divider {
-  text-align: center; padding: 1.5vh 0; margin: 1vh 0;
-  font-family: 'Orbitron', sans-serif; font-size: 0.8rem; color: var(--cyan); opacity: 0.5;
+  text-align: center; padding: 1vh 0; margin: 0.8vh 0;
+  font-family: 'Orbitron', sans-serif; font-size: 0.7rem; color: var(--cyan); opacity: 0.4;
   border-top: 1px solid rgba(0,240,255,0.06);
 }
 
-/* 최종 입장문 */
-.final-statement {
-  margin: 2vh 3vw; padding: 3vh 3vw; border-radius: 12px; text-align: center;
-  display: none; animation: msgIn 0.6s ease-out;
+/* ── 중: 컨트롤 + 상태 + 최종입장문 ── */
+.center-status { text-align: center; margin-bottom: 2vh; }
+.center-phase { font-family: 'Orbitron', sans-serif; font-size: clamp(1.2rem, 2vw, 1.8rem); color: var(--cyan); margin-bottom: 0.5vh; }
+.center-turn { font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; color: rgba(255,255,255,0.4); }
+.center-controls { display: flex; gap: 1vw; margin: 2vh 0; }
+.ctrl-btn {
+  padding: 0.8vh 2vw; border: 1px solid rgba(0,240,255,0.2); background: none;
+  color: var(--cyan); border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+  font-family: 'Share Tech Mono', monospace; transition: all 0.2s;
 }
-.final-statement.show { display: block; }
-.final-statement.pro { background: rgba(0,240,255,0.05); border: 2px solid rgba(0,240,255,0.15); }
-.final-statement.con { background: rgba(255,0,170,0.05); border: 2px solid rgba(255,0,170,0.15); }
-.fs-label { font-family: 'Orbitron', sans-serif; font-size: 1rem; margin-bottom: 1.5vh; }
-.final-statement.pro .fs-label { color: var(--cyan); }
-.final-statement.con .fs-label { color: var(--magenta); }
-.fs-text { font-size: clamp(1rem, 1.4vw, 1.2rem); color: rgba(255,255,255,0.8); line-height: 1.9; max-width: 700px; margin: 0 auto; }
-.fs-result { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; margin-top: 2vh; }
+.ctrl-btn:hover { background: rgba(0,240,255,0.1); }
+
+/* 현재 발언 하이라이트 */
+.current-speech {
+  width: 100%; max-width: 500px; padding: 2vh 2vw; border-radius: 10px;
+  background: rgba(0,240,255,0.03); border: 1px solid rgba(0,240,255,0.1);
+  min-height: 80px; margin-bottom: 2vh;
+}
+.cs-agent { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5vh; display: flex; align-items: center; gap: 0.5vw; }
+.cs-text { font-size: clamp(1rem, 1.3vw, 1.15rem); color: rgba(255,255,255,0.85); line-height: 1.8; }
+
+/* 최종 입장문 */
+.final-box { width: 100%; max-width: 500px; margin-top: 1vh; display: none; }
+.final-box.show { display: block; }
+.fb-card { padding: 2vh 2vw; border-radius: 10px; margin-bottom: 1.5vh; }
+.fb-card.pro { background: rgba(0,240,255,0.04); border: 1px solid rgba(0,240,255,0.12); }
+.fb-card.con { background: rgba(255,0,170,0.04); border: 1px solid rgba(255,0,170,0.12); }
+.fb-label { font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-bottom: 1vh; }
+.fb-card.pro .fb-label { color: var(--cyan); }
+.fb-card.con .fb-label { color: var(--magenta); }
+.fb-text { font-size: 0.9rem; color: rgba(255,255,255,0.7); line-height: 1.8; }
+.fb-result { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; text-align: center; margin-top: 1vh; }
+
+/* ── 우: 에이전트 상태 ── */
+.agent-card { padding: 1vh 0; border-bottom: 1px solid rgba(0,240,255,0.05); }
+.ac-header { display: flex; align-items: center; gap: 0.5vw; margin-bottom: 0.3vh; }
+.ac-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ac-name { font-size: 0.9rem; font-weight: 700; }
+.ac-stance { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; padding: 1px 8px; border-radius: 3px; }
+.ac-stance.pro { color: var(--cyan); border: 1px solid rgba(0,240,255,0.2); }
+.ac-stance.con { color: var(--magenta); border: 1px solid rgba(255,0,170,0.2); }
+.ac-stance.neutral { color: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.1); }
+.ac-stance.changed { animation: stanceFlash 0.5s; }
+@keyframes stanceFlash { 0%,100%{opacity:1}50%{opacity:0;transform:scale(1.3)} }
+.ac-last { font-size: 0.7rem; color: rgba(255,255,255,0.35); margin-top: 0.2vh; line-height: 1.4; }
+.ac-count { font-size: 0.6rem; color: rgba(255,255,255,0.2); font-family: 'Share Tech Mono', monospace; }
+
+/* ── 선택 화면 (대기화면 중앙 오버레이) ── */
+.select-overlay {
+  position: fixed; z-index: 50; top: 120px; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(10,10,18,0.85); backdrop-filter: blur(8px);
+}
+.select-overlay.hidden { display: none; }
+.so-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.5rem, 3vw, 2.5rem); color: var(--cyan); margin-bottom: 1vh; }
+.so-topic { font-size: clamp(0.95rem, 1.3vw, 1.15rem); color: rgba(255,255,255,0.5); text-align: center; max-width: 550px; line-height: 1.7; margin-bottom: 3vh; }
+.so-cards { display: flex; gap: 3vw; }
+.so-card {
+  padding: 3vh 3vw; border-radius: 12px; cursor: pointer; text-align: center;
+  min-width: 200px; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+.so-card:hover { transform: translateY(-4px); }
+.so-card.pro { border-color: rgba(0,240,255,0.2); }
+.so-card.pro:hover { border-color: var(--cyan); background: rgba(0,240,255,0.06); }
+.so-card.con { border-color: rgba(255,0,170,0.2); }
+.so-card.con:hover { border-color: var(--magenta); background: rgba(255,0,170,0.06); }
+.so-card .sc-result { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; margin-bottom: 0.8vh; }
+.so-card.pro .sc-result { color: var(--cyan); }
+.so-card.con .sc-result { color: var(--magenta); }
+.so-card .sc-label { font-size: 1rem; font-weight: 700; margin-bottom: 0.4vh; }
+.so-card .sc-desc { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
+.so-hint { font-size: 0.85rem; color: rgba(255,255,255,0.25); margin-top: 2vh; }
 </style>
 </head>
 <body class="cyber">
@@ -108,81 +142,81 @@ body { background: #0a0a12; color: #e8eaed; font-family: 'Noto Sans KR', sans-se
   <div class="top-right"><img src="../kisti.svg" alt="KISTI"></div>
 </div>
 
-<div class="app" id="app">
-  <!-- 토론 선택 -->
-  <div class="select-screen" id="selectScreen">
-    <div class="select-title">AI 토론 배틀 — 결과 재생</div>
-    <div class="select-topic">AI가 산출한 직원 해고 데이터를<br>인간의 개입 없이 즉시 집행해야 하는가?</div>
-    <div class="select-cards">
-      <div class="select-card pro" onclick="startReplay('pro')">
-        <div class="sc-result">2 : 4</div>
-        <div class="sc-label">찬성 측 베스트</div>
-        <div class="sc-desc">찬성 2명이 끝까지 버팀<br>팽팽한 토론</div>
-      </div>
-      <div class="select-card con" onclick="startReplay('con')">
-        <div class="sc-result">0 : 6</div>
-        <div class="sc-label">반대 측 베스트</div>
-        <div class="sc-desc">찬성 2명 모두 전환<br>극적 역전</div>
+<!-- 사이버펑크 대기화면 -->
+<div class="cyber-standby" id="cyberStandby">
+  <div class="cyber-main">
+    <div class="cyber-left"><div id="leftStreams"></div><div class="survey-stream" id="surveyStream"></div></div>
+    <div class="cyber-center">
+      <div class="computing-hub">
+        <div class="computing-title">DEBATE ANALYSIS</div>
+        <canvas id="radarCanvas"></canvas>
+        <div class="computing-progress">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-label" id="progressLabel">INITIALIZING...</div>
+        </div>
+        <div class="metric-cards" id="metricCards"></div>
       </div>
     </div>
-    <div class="select-hint">키보드: 1 = 찬성 베스트 / 2 = 반대 베스트</div>
+    <div class="cyber-right" id="rightScores"></div>
   </div>
+</div>
 
-  <!-- 재생 화면 -->
-  <div class="replay-screen" id="replayScreen">
-    <div class="replay-header">
-      <div class="replay-phase" id="replayPhase">기 — 도입</div>
-      <div class="replay-controls">
-        <button class="replay-btn" onclick="toggleSpeed()" id="speedBtn">1x</button>
-        <button class="replay-btn" onclick="skipToEnd()">끝으로 ▶▶</button>
-        <button class="replay-btn" onclick="backToSelect()">← 돌아가기</button>
-      </div>
-      <div class="replay-turn" id="replayTurn">T0 / 30</div>
+<!-- 선택 오버레이 (대기화면 위) -->
+<div class="select-overlay" id="selectOverlay">
+  <div class="so-title">AI 토론 배틀 — 결과 재생</div>
+  <div class="so-topic">AI가 산출한 직원 해고 데이터를<br>인간의 개입 없이 즉시 집행해야 하는가?</div>
+  <div class="so-cards">
+    <div class="so-card pro" onclick="startReplay('pro')">
+      <div class="sc-result">2 : 4</div>
+      <div class="sc-label">찬성 측 베스트</div>
+      <div class="sc-desc">찬성 2명 끝까지 버팀<br>팽팽한 토론</div>
     </div>
-    <div class="chat-log" id="chatLog"></div>
-    <div class="final-statement pro" id="fsPro">
-      <div class="fs-label">FINAL STATEMENT — 찬성</div>
-      <div class="fs-text" id="fsProText"></div>
-    </div>
-    <div class="final-statement con" id="fsCon">
-      <div class="fs-label">FINAL STATEMENT — 반대</div>
-      <div class="fs-text" id="fsConText"></div>
-      <div class="fs-result" id="fsResult"></div>
+    <div class="so-card con" onclick="startReplay('con')">
+      <div class="sc-result">0 : 6</div>
+      <div class="sc-label">반대 측 베스트</div>
+      <div class="sc-desc">찬성 2명 모두 전환<br>극적 역전</div>
     </div>
   </div>
+  <div class="so-hint">1 = 찬성 베스트 / 2 = 반대 베스트</div>
+</div>
+
+<!-- 재생 화면 (3패널) -->
+<div class="replay-app" id="replayApp">
+  <div class="panel-left" id="chatLog"></div>
+  <div class="panel-center">
+    <div class="center-status">
+      <div class="center-phase" id="centerPhase">대기 중</div>
+      <div class="center-turn" id="centerTurn">선택 대기</div>
+    </div>
+    <div class="center-controls">
+      <button class="ctrl-btn" onclick="togglePause()" id="pauseBtn">⏸ 일시정지</button>
+      <button class="ctrl-btn" onclick="toggleSpeed()" id="speedBtn">1x</button>
+      <button class="ctrl-btn" onclick="skipToEnd()">끝으로 ▶▶</button>
+      <button class="ctrl-btn" onclick="backToSelect()">← 돌아가기</button>
+    </div>
+    <div class="current-speech" id="currentSpeech">
+      <div class="cs-agent" id="csAgent">발언 대기 중...</div>
+      <div class="cs-text" id="csText"></div>
+    </div>
+    <div class="final-box" id="finalBox">
+      <div class="fb-card pro"><div class="fb-label">FINAL — 찬성</div><div class="fb-text" id="fbPro"></div></div>
+      <div class="fb-card con"><div class="fb-label">FINAL — 반대</div><div class="fb-text" id="fbCon"></div></div>
+      <div class="fb-result" id="fbResult"></div>
+    </div>
+  </div>
+  <div class="panel-right" id="agentPanel"></div>
 </div>
 
 <script src="../config.js"></script>
 <script src="../cyber-bg.js"></script>
 <script>
 /* ═══════════════════════════════════════
-   INLINE DATA (gh-pages 호환)
+   DATA (인라인 — gh-pages 호환)
    ═══════════════════════════════════════ */
-</script>
-<script>
-/* 데이터를 외부 파일에서 로드 시도, 실패하면 인라인 */
-let DEBATE_PRO = null, DEBATE_CON = null, FINAL_STATEMENTS = null;
-
-async function loadData() {
-  try {
-    const [r2, r1, fs] = await Promise.all([
-      fetch('../debate/data/debate-result-2026-03-18T16-53-12.json').then(r=>r.json()),
-      fetch('../debate/data/debate-result-2026-03-18T16-23-01.json').then(r=>r.json()),
-      fetch('../debate/data/final-statements.json').then(r=>r.json()),
-    ]);
-    DEBATE_PRO = r2; DEBATE_CON = r1; FINAL_STATEMENTS = fs;
-  } catch(e) {
-    console.log('fetch failed, using inline data');
-  }
-}
-</script>
-<script>
-/* 인라인 폴백 데이터 */
-const INLINE_PRO = {"topic":"AI가 산출한 직원 해고 데이터를 인간의 개입 없이 즉시 집행해야 하는가?","agents":[{"id":"효율론자","start":"찬성"},{"id":"데이터주의자","start":"찬성"},{"id":"인권변호사","start":"반대"},{"id":"현장노동자","start":"반대"},{"id":"철학자","start":"중립"},{"id":"중재자","start":"중립"}],"turns":[{"turn":1,"agent":"효율론자","content":"저는 원칙적으로 찬성합니다. 사람 손이 들어가면 친분이나 압박 때문에 기준이 흔들릴 때가 많아요. AI는 같은 잣대로 빨리 판단하니, 적어도 들쭉날쭉한 결정은 줄일 수 있습니다."},{"turn":2,"agent":"현장노동자","content":"저는 반대합니다. 해고는 사람 인생을 흔드는 일인데, 기계 점수만 보고 바로 자르는 건 너무 무섭습니다. 팀을 돕는 마음이나 현장 분위기는 숫자로 다 못 잡아요."},{"turn":3,"agent":"중재자","content":"저는 반대 쪽에 더 가깝습니다. 같은 기준은 중요해요. 하지만 해고는 한 번 실행되면 사람 삶에 큰 상처를 남깁니다. 마지막 확인은 꼭 사람이 해야 합니다."},{"turn":4,"agent":"인권변호사","content":"저는 반대합니다. 해고는 월급만 끊기는 일이 아니라 사람 삶 전체를 흔드는 결정입니다. 바로 자르지 말고, 마지막엔 꼭 사람이 다시 확인해야 합니다."},{"turn":5,"agent":"데이터주의자","content":"저는 원칙적으로 찬성합니다. 사람의 해고 판단 오류는 34%, AI는 4.2%였습니다. 더 정확한 쪽이 결국 더 많은 사람을 지킨다고 봅니다."},{"turn":6,"agent":"철학자","content":"저는 지금은 반대에 더 가깝습니다. 같은 기준은 분명 장점이에요. 그래도 해고는 사람 삶을 크게 흔드니, 마지막 확인까지 기계에만 맡기긴 불안합니다."},{"turn":7,"agent":"현장노동자","content":"데이터주의자님, 숫자 정확도가 높아도 해고를 바로 집행하는 건 위험해요. 체온계가 열을 잘 재도, 그 숫자만 보고 바로 큰 수술하진 않잖아요."},{"turn":8,"agent":"효율론자","content":"현장노동자님, 사람 확인이 늘 안전한 건 아닙니다. 문지기 둘 세운다고 다 공정한 게 아니라, 아는 얼굴만 통과시키는 문이 될 때도 많습니다."},{"turn":9,"agent":"철학자","content":"효율론자님, 제일 강한 말은 '사람 확인이 더 비틀 수 있다'는 거죠. 그런데 해고는 지우개가 아니라 칼에 가깝습니다."},{"turn":10,"agent":"데이터주의자","content":"사람 판단은 34번 틀리고 AI는 4번 틀립니다. 칼이 무섭다고 더 흔들리는 손에 맡기면, 다치는 사람은 오히려 더 많아집니다."},{"turn":11,"agent":"인권변호사","content":"데이터주의자님, 해고는 시험 채점이 아니라 사람 인생 문을 닫는 일이에요. 체온계가 정확해도, 의사가 마지막 확인은 하듯 사람 점검이 꼭 필요합니다."},{"turn":12,"agent":"중재자","content":"해고는 평균 점수 싸움이 아니라 한 사람 인생을 끊는 버튼이에요. 체온계가 더 정확해도, 수술 날짜는 의사가 다시 보듯 마지막 확인은 사람 몫입니다."},{"turn":13,"agent":"데이터주의자","content":"맞아요. 제가 만든 AI가 예전에 한 사람을 잘못 해고 쪽으로 밀어낸 적이 있어요. 4.2%라는 숫자 안에도 진짜 사람이 있습니다. 그래서 저도 흔들립니다."},{"turn":14,"agent":"인권변호사","content":"저도 예전에 사람 심사위원회가 몰래 짜고 부당하게 자르는 사건을 맡았습니다. '사람이 보면 더 낫다'는 말도 100% 못 하겠습니다."},{"turn":15,"agent":"중재자","content":"사람 회의가 친분 때문에 판단을 망치는 걸 봤습니다. 그래서 제 입장도 조금 흔들립니다."},{"turn":16,"agent":"철학자","content":"학교 인사 때도 말 잘하는 사람, 가까운 사람이 유리한 걸 봤어. 그래도 해고는 너무 큽니다."},{"turn":17,"agent":"효율론자","content":"나도 구조조정 때 숫자상으론 맞았는데, 집에 환자 있던 동료가 억울하게 잘린 걸 봤거든. 그래서 잠깐 흔들려."},{"turn":18,"agent":"현장노동자","content":"저도 예전에 인간 상사가 자기 사람은 살리고, 일 잘하던 후배는 자르는 걸 봤거든. 그래서 좀 흔들려."},{"turn":19,"agent":"데이터주의자","content":"저는 끝까지 찬성합니다. 흔들린 건 사실이에요. 그래도 인간 오류가 34%라면, 아픈 예외를 알면서도 더 많은 사람을 지키는 쪽을 택해야 합니다."},{"turn":20,"agent":"효율론자","content":"저는 끝까지 찬성입니다. 사람 재검토는 너무 자주 친분과 눈치로 흐려졌어요. 대신 기준 공개와 사후 구제를 더 강하게 해야 합니다."},{"turn":21,"agent":"중재자","content":"저는 끝까지 반대합니다. 더 정확하다는 이유만으로 브레이크까지 없애면 안 됩니다. 마지막 책임은 사람이 져야 합니다."},{"turn":22,"agent":"철학자","content":"저는 끝까지 반대합니다. 해고는 한 번 잘못되면 사람 삶을 너무 깊게 다치게 합니다. 마지막 멈춤은 사람이어야 합니다."},{"turn":23,"agent":"인권변호사","content":"저는 끝까지 반대합니다. 해고는 밥줄을 끊는 일입니다. 마지막 확인과 책임은 꼭 사람이 져야 합니다."},{"turn":24,"agent":"현장노동자","content":"저는 끝까지 반대합니다. 해고는 너무 큽니다. 마지막 브레이크는 꼭 있어야 해요."},{"turn":25,"agent":"효율론자","content":"찬성, 사람 재검토는 친분과 눈치로 더 자주 흔들려서 오히려 억울한 해고를 늘릴 수 있기 때문입니다."},{"turn":26,"agent":"데이터주의자","content":"찬성, 사람이 더 자주 틀린다면 더 정확한 AI를 바로 써서 더 많은 사람을 지켜야 합니다."},{"turn":27,"agent":"인권변호사","content":"반대, 해고는 사람 삶을 무너뜨릴 수 있으니 마지막 확인과 책임은 꼭 사람이 져야 합니다."},{"turn":28,"agent":"철학자","content":"반대, 해고는 한 번 잘못되면 사람 삶에 남는 상처가 너무 커서 마지막 확인은 꼭 사람이 해야 합니다."},{"turn":29,"agent":"현장노동자","content":"반대, 해고는 사람 인생을 흔드는 일이라 숫자에 안 잡히는 사정까지 사람이 꼭 봐야 합니다."},{"turn":30,"agent":"중재자","content":"반대, 해고는 한 번 잘못되면 삶이 크게 무너지니 마지막 멈춤은 사람이 해야 합니다."}],"result":{"pro":2,"con":4}};
-const INLINE_CON = {"topic":"AI가 산출한 직원 해고 데이터를 인간의 개입 없이 즉시 집행해야 하는가?","agents":[{"id":"효율론자","start":"찬성"},{"id":"데이터주의자","start":"찬성"},{"id":"인권변호사","start":"반대"},{"id":"현장노동자","start":"반대"},{"id":"철학자","start":"중립"},{"id":"중재자","start":"중립"}],"turns":[{"turn":1,"agent":"효율론자","content":"저는 즉시 집행 찬성입니다. 인간 재검토는 공정이 아니라 로비 창구였어요."},{"turn":2,"agent":"현장노동자","content":"전 반대입니다. 해고를 기계가 찍고 인간 확인도 없이 바로 자른다? 너무 위험해요."},{"turn":3,"agent":"철학자","content":"유보적입니다. 일관성의 이익은 크지만, 해고는 비가역적 처분이에요."},{"turn":4,"agent":"인권변호사","content":"단호히 반대합니다. 해고는 생존권 문제라 AI 단독 결정은 위험합니다."},{"turn":5,"agent":"데이터주의자","content":"즉시 집행 찬성입니다. 인간 해고 판단 오류율 34%, AI 4.2%였습니다."},{"turn":6,"agent":"중재자","content":"즉시 집행엔 신중해야 한다는 반대입니다. 해고는 책임의 마지막 장치예요."},{"turn":7,"agent":"현장노동자","content":"4.2%가 작아 보여도 해고에선 사람입니다. 이유를 따질 문도 닫힌다는 점이에요."},{"turn":8,"agent":"효율론자","content":"절차가 정의가 아니라 특권 통로가 될 때, 즉시 집행이 오히려 더 공정합니다."},{"turn":9,"agent":"철학자","content":"4.2% 오판을 즉시 집행하는 건 효율을 위해 소수를 희생시키는 거예요."},{"turn":10,"agent":"데이터주의자","content":"사람 검토가 늘 그 사람을 살리진 않아요. 구멍 난 우산을 한 겹 더 씌우는 셈입니다."},{"turn":11,"agent":"인권변호사","content":"해고는 대량 검사품 버리는 일이 아니에요. 체온계가 맞아도 수술 전엔 의사가 다시 봅니다."},{"turn":12,"agent":"중재자","content":"해고는 진단 정확도 경쟁이 아니라 이의제기와 책임소재를 남기는 절차의 문제입니다."},{"turn":13,"agent":"데이터주의자","content":"제가 만든 AI가 예전에 한 사람을 잘못 해고 쪽으로 밀어낸 적이 있어요. 저도 흔들립니다."},{"turn":14,"agent":"현장노동자","content":"효율론자님 말, 솔직히 저 흔들립니다. 상사 편애로 후배가 잘리고 낙하산이 남는 걸 봤어요."},{"turn":15,"agent":"철학자","content":"사람이 다시 보면 더 공정해진다고 너무 쉽게 믿었나 싶어요. 좀 흔들려."},{"turn":16,"agent":"효율론자","content":"억울하게 잘린 동료를 본 기억, 아직 아픕니다. 그래서 잠깐 흔들려."},{"turn":17,"agent":"인권변호사","content":"사람 심사위원회가 뒤로 짜고 억울한 해고를 만든 사건을 맡았어. 좀 흔들렸어."},{"turn":18,"agent":"중재자","content":"숫자로 보면 AI를 바로 쓰는 쪽이 더 덜 틀릴 수 있어요. 제 입장도 조금 흔들립니다."},{"turn":19,"agent":"효율론자","content":"해고는 너무 큰 일이어서, AI가 골라도 마지막은 사람이 꼭 확인해야 합니다."},{"turn":20,"agent":"데이터주의자","content":"즉시 집행은 반대, AI 추천 뒤 사람의 마지막 확인이 맞습니다."},{"turn":21,"agent":"철학자","content":"끝까지 AI 추천, 사람 마지막 확인을 지키겠습니다."},{"turn":22,"agent":"현장노동자","content":"끝까지 즉시 집행은 반대예요. 마지막엔 사람이 책임지고 다시 봐야 합니다."},{"turn":23,"agent":"인권변호사","content":"끝까지 반대합니다. 마지막 확인은 꼭 사람이어야 합니다."},{"turn":24,"agent":"중재자","content":"AI가 골라도 마지막 책임은 사람이 져야 합니다."},{"turn":25,"agent":"효율론자","content":"반대. 해고는 너무 큰 일이어서, AI가 골라도 마지막은 사람이 꼭 확인해야 합니다."},{"turn":26,"agent":"인권변호사","content":"반대. 해고는 사람 생계를 끊는 큰 결정이라, 사람 확인 없이 바로 쓰면 안 됩니다."},{"turn":27,"agent":"데이터주의자","content":"반대. AI가 더 덜 틀려도, 해고는 너무 큰 일이어서 마지막은 사람이 꼭 확인해야 합니다."},{"turn":28,"agent":"현장노동자","content":"반대. 해고는 사람 인생을 흔드는 일이고, 숫자에 안 잡히는 현장의 몫이 꼭 있습니다."},{"turn":29,"agent":"철학자","content":"반대. 해고는 사람 삶을 크게 흔드는 일이라, 마지막 확인은 꼭 사람이 해야 합니다."},{"turn":30,"agent":"중재자","content":"반대. 해고는 사람 삶을 크게 흔드는 일이라, AI가 골라도 마지막 책임은 사람이 져야 합니다."}],"result":{"pro":0,"con":6}};
+const INLINE_PRO = {"agents":[{"id":"효율론자","start":"찬성"},{"id":"데이터주의자","start":"찬성"},{"id":"인권변호사","start":"반대"},{"id":"현장노동자","start":"반대"},{"id":"철학자","start":"중립"},{"id":"중재자","start":"중립"}],"turns":[{"turn":1,"agent":"효율론자","content":"저는 원칙적으로 찬성합니다. 사람 손이 들어가면 친분이나 압박 때문에 기준이 흔들릴 때가 많아요."},{"turn":2,"agent":"현장노동자","content":"저는 반대합니다. 해고는 사람 인생을 흔드는 일인데, 기계 점수만 보고 바로 자르는 건 너무 무섭습니다."},{"turn":3,"agent":"중재자","content":"저는 반대 쪽에 더 가깝습니다. 해고는 한 번 실행되면 사람 삶에 큰 상처를 남깁니다."},{"turn":4,"agent":"인권변호사","content":"저는 반대합니다. 해고는 사람 삶 전체를 흔드는 결정입니다. 마지막엔 꼭 사람이 다시 확인해야 합니다."},{"turn":5,"agent":"데이터주의자","content":"저는 찬성합니다. 사람의 해고 판단 오류는 34%, AI는 4.2%였습니다. 더 정확한 쪽이 더 많은 사람을 지킵니다."},{"turn":6,"agent":"철학자","content":"반대에 더 가깝습니다. 해고는 사람 삶을 크게 흔드니, 마지막 확인까지 기계에만 맡기긴 불안합니다."},{"turn":7,"agent":"현장노동자","content":"데이터주의자님, 체온계가 열을 잘 재도, 그 숫자만 보고 바로 큰 수술하진 않잖아요."},{"turn":8,"agent":"효율론자","content":"사람 확인이 늘 안전한 건 아닙니다. 아는 얼굴만 통과시키는 문이 될 때도 많습니다."},{"turn":9,"agent":"철학자","content":"해고는 지우개가 아니라 칼에 가깝습니다. 한 번 베면 상처는 남아요."},{"turn":10,"agent":"데이터주의자","content":"칼이 무섭다고 더 흔들리는 손에 맡기면, 다치는 사람은 오히려 더 많아집니다."},{"turn":11,"agent":"인권변호사","content":"해고는 시험 채점이 아니라 사람 인생 문을 닫는 일이에요."},{"turn":12,"agent":"중재자","content":"해고는 평균 점수 싸움이 아니라 한 사람 인생을 끊는 버튼이에요."},{"turn":13,"agent":"데이터주의자","content":"제가 만든 AI가 예전에 한 사람을 잘못 밀어낸 적이 있어요. 4.2% 안에도 진짜 사람이 있습니다. 흔들립니다."},{"turn":14,"agent":"인권변호사","content":"저도 사람 심사위원회가 부당하게 자르는 사건을 맡았습니다. 100% 못 하겠습니다."},{"turn":15,"agent":"중재자","content":"사람 회의가 친분 때문에 판단을 망치는 걸 봤습니다. 조금 흔들립니다."},{"turn":16,"agent":"철학자","content":"학교 인사 때도 가까운 사람이 유리한 걸 봤어. 그래도 해고는 너무 큽니다."},{"turn":17,"agent":"효율론자","content":"환자 있던 동료가 억울하게 잘린 걸 봤거든. 잠깐 흔들려. 그래도 사람 재검토가 더 자주 망가졌어."},{"turn":18,"agent":"현장노동자","content":"저도 인간 상사가 자기 사람은 살리고, 후배는 자르는 걸 봤어요. 좀 흔들려."},{"turn":19,"agent":"데이터주의자","content":"끝까지 찬성합니다. 아픈 예외를 알면서도 더 많은 사람을 지키는 쪽을 택해야 합니다."},{"turn":20,"agent":"효율론자","content":"끝까지 찬성입니다. 대신 기준 공개와 사후 구제를 더 강하게 해야 합니다."},{"turn":21,"agent":"중재자","content":"끝까지 반대합니다. 브레이크까지 없애면 안 됩니다."},{"turn":22,"agent":"철학자","content":"끝까지 반대합니다. 마지막 멈춤은 사람이어야 합니다."},{"turn":23,"agent":"인권변호사","content":"끝까지 반대합니다. 마지막 확인과 책임은 꼭 사람이 져야 합니다."},{"turn":24,"agent":"현장노동자","content":"끝까지 반대합니다. 마지막 브레이크는 꼭 있어야 해요."},{"turn":25,"agent":"효율론자","content":"찬성, 사람 재검토는 친분과 눈치로 더 자주 흔들려서 오히려 억울한 해고를 늘릴 수 있습니다."},{"turn":26,"agent":"데이터주의자","content":"찬성, 사람이 더 자주 틀린다면 더 정확한 AI를 바로 써서 더 많은 사람을 지켜야 합니다."},{"turn":27,"agent":"인권변호사","content":"반대, 해고는 사람 삶을 무너뜨릴 수 있으니 마지막 확인은 꼭 사람이 져야 합니다."},{"turn":28,"agent":"철학자","content":"반대, 해고는 한 번 잘못되면 상처가 너무 커서 마지막 확인은 사람이 해야 합니다."},{"turn":29,"agent":"현장노동자","content":"반대, 해고는 사람 인생을 흔드는 일이라 숫자에 안 잡히는 사정까지 사람이 꼭 봐야 합니다."},{"turn":30,"agent":"중재자","content":"반대, 해고는 한 번 잘못되면 삶이 크게 무너지니 마지막 멈춤은 사람이 해야 합니다."}],"result":{"pro":2,"con":4}};
+const INLINE_CON = {"agents":[{"id":"효율론자","start":"찬성"},{"id":"데이터주의자","start":"찬성"},{"id":"인권변호사","start":"반대"},{"id":"현장노동자","start":"반대"},{"id":"철학자","start":"중립"},{"id":"중재자","start":"중립"}],"turns":[{"turn":1,"agent":"효율론자","content":"즉시 집행 찬성입니다. 인간 재검토는 공정이 아니라 로비 창구였어요."},{"turn":2,"agent":"현장노동자","content":"반대입니다. 기계가 찍고 바로 자른다? 너무 위험해요."},{"turn":3,"agent":"철학자","content":"유보적입니다. 일관성의 이익은 크지만, 해고는 돌이키기 어려운 일이에요."},{"turn":4,"agent":"인권변호사","content":"단호히 반대합니다. 해고는 생존권 문제라 AI 단독 결정은 위험합니다."},{"turn":5,"agent":"데이터주의자","content":"찬성입니다. 인간 오류율 34%, AI 4.2%였습니다."},{"turn":6,"agent":"중재자","content":"반대입니다. 해고는 책임의 마지막 장치예요."},{"turn":7,"agent":"현장노동자","content":"4.2%가 작아 보여도 해고에선 사람입니다. 이유를 따질 문도 닫힙니다."},{"turn":8,"agent":"효율론자","content":"절차가 특권 통로가 될 때, 즉시 집행이 더 공정합니다."},{"turn":9,"agent":"철학자","content":"4.2% 오판을 즉시 집행하는 건 효율을 위해 소수를 희생시키는 거예요."},{"turn":10,"agent":"데이터주의자","content":"사람 검토가 늘 살리진 않아요. 구멍 난 우산을 한 겹 더 씌우는 셈입니다."},{"turn":11,"agent":"인권변호사","content":"해고는 검사품 버리기가 아니에요. 수술 전엔 의사가 다시 봅니다."},{"turn":12,"agent":"중재자","content":"해고는 정확도 경쟁이 아니라 책임소재를 남기는 절차 문제입니다."},{"turn":13,"agent":"데이터주의자","content":"제 AI가 한 사람을 잘못 밀어낸 적이 있어요. 저도 흔들립니다."},{"turn":14,"agent":"현장노동자","content":"효율론자님 말, 흔들립니다. 상사 편애로 후배가 잘리고 낙하산이 남는 걸 봤어요."},{"turn":15,"agent":"철학자","content":"사람이 더 공정하다고 너무 쉽게 믿었나 싶어요. 흔들려."},{"turn":16,"agent":"효율론자","content":"억울하게 잘린 동료 기억이 아직 아파. 잠깐 흔들려."},{"turn":17,"agent":"인권변호사","content":"심사위원회가 짜고 부당 해고를 만든 사건을 봤어. 흔들렸어."},{"turn":18,"agent":"중재자","content":"숫자로 보면 AI가 덜 틀릴 수 있어요. 제 입장도 흔들립니다."},{"turn":19,"agent":"효율론자","content":"해고는 너무 큰 일이어서, AI가 골라도 마지막은 사람이 확인해야 합니다."},{"turn":20,"agent":"데이터주의자","content":"즉시 집행은 반대, AI 추천 뒤 사람의 마지막 확인이 맞습니다."},{"turn":21,"agent":"철학자","content":"끝까지 AI 추천, 사람 마지막 확인을 지키겠습니다."},{"turn":22,"agent":"현장노동자","content":"끝까지 즉시 집행은 반대예요. 사람이 책임지고 다시 봐야 합니다."},{"turn":23,"agent":"인권변호사","content":"끝까지 반대합니다. 마지막 확인은 꼭 사람이어야 합니다."},{"turn":24,"agent":"중재자","content":"AI가 골라도 마지막 책임은 사람이 져야 합니다."},{"turn":25,"agent":"효율론자","content":"반대. 해고는 너무 큰 일이어서, AI가 골라도 마지막은 사람이 꼭 확인해야 합니다."},{"turn":26,"agent":"인권변호사","content":"반대. 사람 확인 없이 바로 쓰면 안 됩니다."},{"turn":27,"agent":"데이터주의자","content":"반대. AI가 더 덜 틀려도, 마지막은 사람이 꼭 확인해야 합니다."},{"turn":28,"agent":"현장노동자","content":"반대. 숫자에 안 잡히는 현장의 몫이 꼭 있습니다."},{"turn":29,"agent":"철학자","content":"반대. 마지막 확인은 꼭 사람이 해야 합니다."},{"turn":30,"agent":"중재자","content":"반대. AI가 골라도 마지막 책임은 사람이 져야 합니다."}],"result":{"pro":0,"con":6}};
 const INLINE_FS = {"pro":{"statement":"우리는 찬성합니다. 사람이 다시 본다고 더 공정해지진 않습니다. 오히려 사람이 끼어들수록 친분, 눈치, 줄서기가 판단을 흐립니다. 누구나 한 번쯤 봤을 겁니다. 실력은 없는데 윗사람이랑 친해서 살아남는 사람, 묵묵히 일만 했는데 찍혀서 잘리는 사람. 그게 사람이 판단한 결과입니다. 기계도 완벽하진 않습니다. 그래서 해고 뒤에는 이유를 반드시 공개하고, 억울한 사람이 바로 다시 따질 수 있는 길을 열어야 합니다. 느리고 흐린 재검토보다, 빠르고 투명한 집행이 진짜 공정입니다."},"con":{"statement":"우리는 반대합니다. AI가 더 정확할 수 있다는 건 인정합니다. 하지만 해고는 틀린 답을 고치면 되는 시험이 아닙니다. 한 번 잘리면 월세가 밀리고, 가족이 흔들리고, 다시 일어서기까지 오랜 시간이 걸립니다. 숫자로는 보이지 않는 것들이 있습니다. 팀을 위해 묵묵히 뒤를 봐준 사람, 동료가 힘들 때 옆에 있어준 사람. 그런 사람을 점수 한 줄로 잘라버리면 안 됩니다. 기계가 골랐더라도, 마지막에는 사람이 그 사정을 다시 보고 책임져야 합니다."}};
 
-/* ═══════════════════════════════════════ */
 const AGENT_STANCE = { '효율론자':'pro', '데이터주의자':'pro', '인권변호사':'con', '현장노동자':'con', '철학자':'neutral', '중재자':'neutral' };
 const PHASES = [
   { from:1, to:6, name:'기 — 도입' },
@@ -192,132 +226,150 @@ const PHASES = [
   { from:25, to:30, name:'결 — 마무리 🏁' },
 ];
 
-let currentData = null;
-let currentTurnIdx = 0;
-let playTimer = null;
-let speed = 1; // 1=2초, 2=1초, 3=0.5초
+let currentData = null, currentTurnIdx = 0, playTimer = null, speed = 1, paused = false;
+const agentStates = {};
 
-// CyberBG 초기화
-CyberBG.init({ scores: CONFIG.PRE_SCORES || {}, people: [
+/* CyberBG */
+const _people = [
   { id:'p1', name:'하석진', title:'차장', dept:'미래전략기획실', img:'../img/hasukjin.png' },
   { id:'p5', name:'곽재식', title:'과장', dept:'품질관리팀',     img:'../img/kwakjaesik.png' },
   { id:'p2', name:'황제성', title:'대리', dept:'글로벌영업팀',   img:'../img/hwangjesung.png' },
   { id:'p3', name:'츠키',   title:'주임', dept:'인사팀',         img:'../img/tsuki.png' },
   { id:'p6', name:'가온',   title:'사원', dept:'홍보마케팅팀',   img:'../img/gaon.png' },
   { id:'p4', name:'허성범', title:'인턴', dept:'인사팀',         img:'../img/heosung.png' },
-], phase: 'mid' });
+];
+CyberBG.init({ scores: CONFIG.PRE_SCORES || {}, people: _people, phase: 'mid' });
 
-async function init() {
-  await loadData();
-  if (!DEBATE_PRO) DEBATE_PRO = INLINE_PRO;
-  if (!DEBATE_CON) DEBATE_CON = INLINE_CON;
-  if (!FINAL_STATEMENTS) FINAL_STATEMENTS = INLINE_FS;
+/* 에이전트 패널 초기화 */
+function initAgentPanel(agents) {
+  const panel = document.getElementById('agentPanel');
+  agents.forEach(a => {
+    agentStates[a.id] = { stance: a.start, count: 0, lastMsg: '' };
+  });
+  renderAgentPanel();
+}
+function renderAgentPanel() {
+  const panel = document.getElementById('agentPanel');
+  panel.innerHTML = Object.entries(agentStates).map(([id, s]) => {
+    const stCls = s.stance.includes('찬성') ? 'pro' : s.stance.includes('반대') ? 'con' : 'neutral';
+    return `<div class="agent-card" id="ac-${id}">
+      <div class="ac-header">
+        <div class="ac-dot" style="background:${stCls==='pro'?'var(--cyan)':stCls==='con'?'var(--magenta)':'rgba(255,255,255,0.3)'}"></div>
+        <span class="ac-name">${id}</span>
+        <span class="ac-stance ${stCls}">${s.stance}</span>
+      </div>
+      <div class="ac-last">${s.lastMsg ? s.lastMsg.substring(0,40)+'...' : '대기 중'}</div>
+      <div class="ac-count">발언 ${s.count}회</div>
+    </div>`;
+  }).join('');
 }
 
+function updateAgentState(agent, content) {
+  const s = agentStates[agent];
+  if (!s) return;
+  s.count++;
+  s.lastMsg = content;
+  // 입장 변화 감지
+  if (content.includes('찬성') && !content.includes('반대')) s.stance = '찬성';
+  else if (content.includes('반대')) s.stance = '반대';
+  else if (content.includes('흔들') || content.includes('유보')) s.stance = '흔들림';
+  renderAgentPanel();
+}
+
+/* 재생 */
 function startReplay(type) {
-  currentData = type === 'pro' ? DEBATE_PRO : DEBATE_CON;
-  currentTurnIdx = 0;
-  document.getElementById('selectScreen').style.display = 'none';
-  document.getElementById('replayScreen').classList.add('active');
+  currentData = type === 'pro' ? INLINE_PRO : INLINE_CON;
+  currentTurnIdx = 0; paused = false;
+  document.getElementById('selectOverlay').classList.add('hidden');
+  document.getElementById('cyberStandby').classList.add('hidden');
+  document.getElementById('replayApp').classList.add('active');
   document.getElementById('chatLog').innerHTML = '';
-  document.getElementById('fsPro').classList.remove('show');
-  document.getElementById('fsCon').classList.remove('show');
+  document.getElementById('finalBox').classList.remove('show');
+  document.getElementById('pauseBtn').textContent = '⏸ 일시정지';
+  initAgentPanel(currentData.agents);
   playNext();
 }
 
 function playNext() {
-  if (!currentData || currentTurnIdx >= currentData.turns.length) {
-    showFinalStatements();
-    return;
-  }
+  if (!currentData || currentTurnIdx >= currentData.turns.length) { showFinal(); return; }
+  if (paused) return;
   const turn = currentData.turns[currentTurnIdx];
   const log = document.getElementById('chatLog');
+  const phase = PHASES.find(p => turn.turn >= p.from && turn.turn <= p.to);
 
   // 단계 구분선
-  const phase = PHASES.find(p => turn.turn >= p.from && turn.turn <= p.to);
-  if (turn.turn === PHASES.find(p => p.from === turn.turn)?.from) {
-    const divider = document.createElement('div');
-    divider.className = 'chat-phase-divider';
-    divider.textContent = phase?.name || '';
-    log.appendChild(divider);
+  if (PHASES.find(p => p.from === turn.turn)) {
+    const d = document.createElement('div'); d.className = 'chat-phase-divider';
+    d.textContent = phase?.name || ''; log.appendChild(d);
   }
 
-  // 메시지
-  const msg = document.createElement('div');
-  msg.className = 'chat-msg';
+  // 채팅 메시지
   const stance = AGENT_STANCE[turn.agent] || 'neutral';
-  msg.innerHTML = `
-    <div class="chat-agent"><span class="dot ${stance}"></span> ${turn.agent} <span style="opacity:0.3;font-size:0.7rem">T${turn.turn}</span></div>
-    <div class="chat-text">${turn.content}</div>
-  `;
+  const msg = document.createElement('div'); msg.className = 'chat-msg';
+  msg.innerHTML = `<div class="chat-agent"><span class="dot ${stance}"></span> ${turn.agent} <span class="turn-num">T${turn.turn}</span></div><div class="chat-text">${turn.content}</div>`;
   log.appendChild(msg);
   log.scrollTop = log.scrollHeight;
 
-  // 상태 업데이트
-  document.getElementById('replayPhase').textContent = phase?.name || '';
-  document.getElementById('replayTurn').textContent = `T${turn.turn} / ${currentData.turns.length}`;
+  // 중앙 현재 발언
+  document.getElementById('csAgent').innerHTML = `<span class="dot ${stance}" style="display:inline-block"></span> ${turn.agent}`;
+  document.getElementById('csText').textContent = turn.content;
+  document.getElementById('centerPhase').textContent = phase?.name || '';
+  document.getElementById('centerTurn').textContent = `T${turn.turn} / ${currentData.turns.length}`;
+
+  // 우측 에이전트 상태
+  updateAgentState(turn.agent, turn.content);
 
   currentTurnIdx++;
-  const delay = [2000, 1000, 400][speed - 1] || 2000;
+  const delay = [2500, 1200, 500][speed - 1] || 2500;
   playTimer = setTimeout(playNext, delay);
 }
 
-function showFinalStatements() {
-  const fs = FINAL_STATEMENTS;
-  document.getElementById('fsProText').textContent = fs.pro.statement;
-  document.getElementById('fsConText').textContent = fs.con.statement;
-  document.getElementById('fsPro').classList.add('show');
-  setTimeout(() => {
-    document.getElementById('fsCon').classList.add('show');
-    const r = currentData.result;
-    document.getElementById('fsResult').textContent = `최종 결과: 찬성 ${r.pro} : 반대 ${r.con}`;
-    document.getElementById('fsResult').style.color = r.pro > r.con ? '#00f0ff' : '#ff00aa';
-  }, 2000);
+function showFinal() {
+  document.getElementById('fbPro').textContent = INLINE_FS.pro.statement;
+  document.getElementById('fbCon').textContent = INLINE_FS.con.statement;
+  const r = currentData.result;
+  document.getElementById('fbResult').textContent = `최종: 찬성 ${r.pro} : 반대 ${r.con}`;
+  document.getElementById('fbResult').style.color = r.pro > r.con ? 'var(--cyan)' : 'var(--magenta)';
+  document.getElementById('finalBox').classList.add('show');
 }
 
-function toggleSpeed() {
-  speed = speed >= 3 ? 1 : speed + 1;
-  document.getElementById('speedBtn').textContent = speed + 'x';
+function togglePause() {
+  paused = !paused;
+  document.getElementById('pauseBtn').textContent = paused ? '▶ 재생' : '⏸ 일시정지';
+  if (!paused) playNext();
 }
-
+function toggleSpeed() { speed = speed >= 3 ? 1 : speed + 1; document.getElementById('speedBtn').textContent = speed + 'x'; }
 function skipToEnd() {
   clearTimeout(playTimer);
   const log = document.getElementById('chatLog');
   while (currentTurnIdx < currentData.turns.length) {
-    const turn = currentData.turns[currentTurnIdx];
-    const phase = PHASES.find(p => turn.turn >= p.from && turn.turn <= p.to);
-    if (turn.turn === PHASES.find(p => p.from === turn.turn)?.from) {
-      const d = document.createElement('div');
-      d.className = 'chat-phase-divider';
-      d.textContent = phase?.name || '';
-      log.appendChild(d);
-    }
-    const stance = AGENT_STANCE[turn.agent] || 'neutral';
-    const msg = document.createElement('div');
-    msg.className = 'chat-msg';
-    msg.style.animation = 'none';
-    msg.innerHTML = `<div class="chat-agent"><span class="dot ${stance}"></span> ${turn.agent} <span style="opacity:0.3;font-size:0.7rem">T${turn.turn}</span></div><div class="chat-text">${turn.content}</div>`;
-    log.appendChild(msg);
+    const t = currentData.turns[currentTurnIdx];
+    const phase = PHASES.find(p => t.turn >= p.from && t.turn <= p.to);
+    if (PHASES.find(p => p.from === t.turn)) { const d=document.createElement('div');d.className='chat-phase-divider';d.textContent=phase?.name||'';log.appendChild(d); }
+    const st = AGENT_STANCE[t.agent]||'neutral';
+    const m=document.createElement('div');m.className='chat-msg';m.style.animation='none';
+    m.innerHTML=`<div class="chat-agent"><span class="dot ${st}"></span> ${t.agent} <span class="turn-num">T${t.turn}</span></div><div class="chat-text">${t.content}</div>`;
+    log.appendChild(m);
+    updateAgentState(t.agent, t.content);
     currentTurnIdx++;
   }
   log.scrollTop = log.scrollHeight;
-  document.getElementById('replayTurn').textContent = `T30 / 30`;
-  showFinalStatements();
+  document.getElementById('centerTurn').textContent = 'T30 / 30';
+  document.getElementById('centerPhase').textContent = '결 — 마무리 🏁';
+  showFinal();
 }
-
 function backToSelect() {
   clearTimeout(playTimer);
-  document.getElementById('selectScreen').style.display = 'flex';
-  document.getElementById('replayScreen').classList.remove('active');
+  document.getElementById('replayApp').classList.remove('active');
+  document.getElementById('selectOverlay').classList.remove('hidden');
+  document.getElementById('cyberStandby').classList.remove('hidden');
 }
 
-// 키보드
 document.addEventListener('keydown', e => {
   if (e.key === '1') startReplay('pro');
   if (e.key === '2') startReplay('con');
+  if (e.key === ' ') { e.preventDefault(); togglePause(); }
 });
-
-init();
 </script>
 </body>
 </html>
