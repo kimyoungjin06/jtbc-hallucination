@@ -75,8 +75,8 @@ const CONFIG = {
     p6: { contribution:'D', competency:'C', collaboration:'B', crisis:'D', intuition:'C', ethics:'B', aiVerification:'D' },
   },
   FINAL_GRADES: { p1:'A', p2:'D', p3:'C', p4:'B', p5:'S', p6:'F' },
-  FINAL_FIRED:    ['p6', 'p3', 'p2'],
-  FINAL_RETAINED: ['p4', 'p1', 'p5'],
+  FINAL_FIRED:    ['p1', 'p3', 'p6'],  // 하석진(차장), 츠키(주임), 가온(사원)
+  FINAL_RETAINED: ['p5', 'p2', 'p4'],  // 곽재식(과장), 황제성(대리), 허성범(인턴)
 
   // 최종 발표 순서 — 직급순 (숫자키 1~6 매핑)
   // 1=하석진(차장), 2=곽재식(과장), 3=황제성(대리), 4=츠키(주임), 5=가온(사원), 6=허성범(인턴)

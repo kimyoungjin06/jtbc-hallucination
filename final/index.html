@@ -221,17 +221,18 @@ function executeVerdict() {
   const t2 = t1 + Math.max(5000, evalLen * 120);  // Phase 2: 결론 (평가문 읽을 시간)
   const t3 = t2 + 3000;                     // Phase 3: 명령 + 상태
 
-  // Phase 1: 평가문
+  // Phase 1: 평가문 + TTS
   setTimeout(() => {
     document.getElementById('vEval').textContent = v.evaluation || '(평가문 없음)';
     document.getElementById('vEval').classList.add('show');
-    // TTS: 전체 멘트 (평가문 + 결론 + 명령)
-    const fullScript = `${v.evaluation || ''} ${v.conclusion || ''} ${v.order || ''}`;
-    tryTTS(fullScript);
+    tryTTS(v.evaluation || '');
   }, t1);
 
-  // Phase 2: 해고/고용유지 + 결론
+  // Phase 2: 해고/고용유지 + 결론 + TTS
   setTimeout(() => {
+    // TTS: 결론 + 명령
+    tryTTS(`${v.conclusion || ''} ${v.order || ''}`);
+
     const badge = document.getElementById('vGradeBadge');
     badge.style.display = 'flex';
     document.getElementById('vGrade').style.color = gc;
