@@ -1,0 +1,26 @@
+/* ═══════════════════════════════════════
+   할루시네이션: 해고전쟁 — 공통 헤더
+   모든 페이지에서 @import 또는 <link>로 사용
+   ═══════════════════════════════════════ */
+
+.top-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 40px; height: 120px;
+  background: rgba(5,9,13,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.top-left { display: flex; align-items: center; gap: 20px; }
+.top-left img { height: 60px; }
+.top-title-wrap { display: flex; flex-direction: column; }
+.top-title {
+  font-size: 2.2rem; font-weight: 900;
+  font-family: 'Noto Sans KR', -apple-system, sans-serif;
+  color: #e8eaed; line-height: 1.2;
+}
+.top-sub {
+  font-size: 1.1rem; color: rgba(255,255,255,0.4);
+  margin-top: 2px;
+}
+.top-right { display: flex; align-items: center; gap: 16px; }
+.top-right img { height: 60px; filter: brightness(1.3); }

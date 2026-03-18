@@ -3,88 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>할루시네이션: 해고전쟁 — 사전 평가</title>
+<title>할루시네이션: 해고전쟁</title>
 <style>
-:root {
-  --bg: #05090d; --surface: #0f1923; --border: rgba(255,255,255,0.08);
-  --text: #e8eaed; --muted: rgba(255,255,255,0.4); --accent: #6366f1;
-  --gold: #ffd700; --green: #59d28f; --cyan: #4ed9e8; --orange: #f3b63f; --red-light: #ff6b3d; --red: #ff2d2d;
-}
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; height: 100vh; overflow: hidden; }
+body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%); color: #e8eaed; font-family: 'Noto Sans KR', -apple-system, sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
 
-/* Header */
-.header { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.header-left img { height: 24px; }
-.header-title { font-size: 1rem; font-weight: 800; }
-.header-sub { font-size: 0.7rem; color: var(--muted); }
-.header-right { display: flex; align-items: center; gap: 8px; }
-.header-right img { height: 26px; filter: brightness(1.3); }
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 48px; height: 140px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(5,9,13,0.85); backdrop-filter: blur(8px);
+}
+.header-left { display: flex; align-items: center; gap: 24px; }
+.header-left img { height: 72px; }
+.header-title { font-size: 3rem; font-weight: 900; }
+.header-sub { font-size: 1.4rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
+.header-right img { height: 72px; filter: brightness(1.3); }
 
-/* Layout */
-.app { display: flex; flex-direction: column; height: 100vh; }
+.main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4vh; }
+.main h1 { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 900; color: #ffd700; text-align: center; }
+.main p { font-size: clamp(1rem, 1.6vw, 1.3rem); color: rgba(255,255,255,0.5); text-align: center; }
 
-/* Controls bar */
-.controls { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.btn { padding: 6px 18px; border: 2px solid var(--accent); background: transparent; color: var(--accent); border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-.btn:hover { background: rgba(99,102,241,0.15); }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn:disabled { opacity: 0.3; cursor: default; }
-.counter { font-size: 0.8rem; color: var(--muted); }
+.cards { display: flex; gap: 2.5vw; flex-wrap: wrap; justify-content: center; margin-top: 2vh; }
+.card {
+  width: clamp(200px, 18vw, 260px); padding: 3vh 2vw; border-radius: 16px;
+  background: rgba(255,255,255,0.04); border: 2px solid rgba(255,255,255,0.08);
+  text-align: center; cursor: pointer; transition: all 0.3s;
+  text-decoration: none; color: inherit; display: flex; flex-direction: column; align-items: center; gap: 1.5vh;
+}
+.card:hover { border-color: #6366f1; background: rgba(99,102,241,0.08); transform: translateY(-4px); }
+.card-icon { font-size: 2.5rem; }
+.card-title { font-size: clamp(1.1rem, 1.5vw, 1.4rem); font-weight: 800; }
+.card-desc { font-size: clamp(0.8rem, 1vw, 0.95rem); color: rgba(255,255,255,0.4); line-height: 1.5; }
 
-/* Full-screen person view */
-.person-view { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
-
-.person-card { text-align: center; animation: personIn 0.6s ease-out; max-width: 500px; width: 100%; }
-@keyframes personIn { from { opacity: 0; transform: translateY(30px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-.person-photo { width: 160px; height: 160px; border-radius: 50%; object-fit: cover; border: 4px solid var(--border); margin: 0 auto 1.5rem; display: block; transition: border-color 0.5s; }
-.person-photo.revealed { border-color: var(--grade-color); box-shadow: 0 0 30px var(--grade-color-glow); }
-
-.person-name { font-size: 2.2rem; font-weight: 900; margin-bottom: 0.3rem; }
-.person-dept { font-size: 1rem; color: var(--muted); margin-bottom: 0.3rem; }
-.person-aptitude { font-size: 0.9rem; color: var(--accent); margin-bottom: 2rem; }
-
-/* Grade area */
-.grade-area { min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
-.grade-hidden { font-size: 2rem; color: var(--muted); letter-spacing: 0.3em; }
-.grade-spinning { font-size: 5rem; font-weight: 900; animation: gradeShake 0.08s infinite; color: var(--gold); }
-.grade-final { font-size: 7rem; font-weight: 900; text-shadow: 0 0 60px currentColor; animation: gradeLock 0.6s ease-out; }
-.grade-label { font-size: 1.2rem; font-weight: 700; margin-top: 6px; }
-@keyframes gradeShake { 0% { transform: translateY(-3px); } 50% { transform: translateY(3px); } 100% { transform: translateY(-3px); } }
-@keyframes gradeLock { 0% { transform: scale(2.5); opacity: 0; } 40% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
-
-/* Keywords */
-.keywords { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 1.5rem; opacity: 0; transition: opacity 0.5s; }
-.keywords.show { opacity: 1; }
-.keyword { font-size: 0.9rem; padding: 4px 14px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted); }
-
-/* Summary */
-.person-summary { font-size: 1rem; color: rgba(255,255,255,0.7); line-height: 1.7; max-width: 450px; margin: 0 auto; opacity: 0; transition: opacity 0.5s; }
-.person-summary.show { opacity: 1; }
-
-/* Navigation arrows */
-.nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); font-size: 2rem; color: var(--muted); cursor: pointer; padding: 20px; transition: color 0.2s; user-select: none; }
-.nav-arrow:hover { color: var(--text); }
-.nav-arrow.left { left: 20px; }
-.nav-arrow.right { right: 20px; }
-
-/* Empty state */
-.empty-state { text-align: center; }
-.empty-state h2 { font-size: 1.5rem; color: var(--gold); margin-bottom: 0.5rem; }
-.empty-state p { color: var(--muted); }
+.card.accent-gold { border-color: rgba(255,215,0,0.2); }
+.card.accent-gold:hover { border-color: #ffd700; background: rgba(255,215,0,0.06); }
+.card.accent-red { border-color: rgba(255,45,45,0.2); }
+.card.accent-red:hover { border-color: #ff2d2d; background: rgba(255,45,45,0.06); }
+.card.accent-magenta { border-color: rgba(255,0,170,0.2); }
+.card.accent-magenta:hover { border-color: #ff00aa; background: rgba(255,0,170,0.06); }
+.card.accent-cyan { border-color: rgba(78,217,232,0.2); }
+.card.accent-cyan:hover { border-color: #4ed9e8; background: rgba(78,217,232,0.06); }
+.card.accent-green { border-color: rgba(89,210,143,0.2); }
+.card.accent-green:hover { border-color: #59d28f; background: rgba(89,210,143,0.06); }
+.card.accent-orange { border-color: rgba(243,182,63,0.2); }
+.card.accent-orange:hover { border-color: #f3b63f; background: rgba(243,182,63,0.06); }
 </style>
 </head>
 <body>
-<div class="app">
 
 <div class="header">
   <div class="header-left">
     <img src="jtbc.png" alt="JTBC">
     <div>
       <div class="header-title">할루시네이션: 해고전쟁</div>
-      <div class="header-sub">ORBIT CONSULTING — 사전 평가</div>
+      <div class="header-sub">ORBIT CONSULTING — 평가 시스템</div>
     </div>
   </div>
   <div class="header-right">
@@ -92,159 +64,59 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
   </div>
 </div>
 
-<div class="controls">
-  <button class="btn" onclick="prevPerson()" id="btnPrev" disabled>◀ 이전</button>
-  <span class="counter" id="counter">- / 6</span>
-  <button class="btn" onclick="nextPerson()" id="btnNext" disabled>다음 ▶</button>
-  <span style="width:1px;height:20px;background:var(--border);margin:0 8px"></span>
-  <button class="btn btn-primary" onclick="revealGrade()" id="btnReveal">등급 공개</button>
-  <button class="btn" onclick="autoAll()">자동 전체</button>
-</div>
+<div class="main">
+  <h1>평가 시스템</h1>
+  <p>발표 단계를 선택하세요</p>
 
-<div class="person-view" id="personView">
-  <div class="empty-state">
-    <h2>사전 평가</h2>
-    <p>"다음" 버튼으로 출연자를 확인하세요</p>
+  <div class="cards">
+    <a class="card accent-gold" href="pre1/index.html">
+      <div class="card-icon">1</div>
+      <div class="card-title">사전평가 v1</div>
+      <div class="card-desc">순차 발표<br>스페이스바 진행</div>
+    </a>
+    <a class="card accent-cyan" href="pre2/index.html">
+      <div class="card-icon">2</div>
+      <div class="card-title">사전평가 v2</div>
+      <div class="card-desc">숫자키 선택 + 룰렛<br>전체 7개 지표</div>
+    </a>
+    <a class="card accent-green" href="pre3/index.html">
+      <div class="card-icon">3</div>
+      <div class="card-title">사전평가 v3</div>
+      <div class="card-desc">숫자키 선택 + 룰렛<br>최고/최악 부문만</div>
+    </a>
+    <a class="card accent-orange" href="mid/index.html">
+      <div class="card-icon">M</div>
+      <div class="card-title">중간평가</div>
+      <div class="card-desc">S등급 / F등급<br>사람 룰렛</div>
+    </a>
+    <a class="card accent-red" href="final/index.html">
+      <div class="card-icon">F</div>
+      <div class="card-title">최종 인사발령</div>
+      <div class="card-desc">해고 / 고용유지<br>최종 통보</div>
+    </a>
+  </div>
+
+  <div style="margin-top:3vh;border-top:1px solid rgba(255,255,255,0.06);padding-top:3vh;width:100%;display:flex;justify-content:center">
+    <div class="cards">
+      <a class="card accent-magenta" href="javascript:void(0)" onclick="openDebate()" id="debateCard">
+        <div class="card-icon" style="font-size:2rem">AI</div>
+        <div class="card-title">AI 토론 재생</div>
+        <div class="card-desc">실무⑤ 토론 배틀<br>사전 생성 결과 재생</div>
+      </a>
+    </div>
   </div>
 </div>
 
-</div>
-
+<script src="config.js"></script>
 <script>
-const GRADES = ['S','A','B','C','D','F'];
-const GRADE_COLORS = { S:'#ffd700', A:'#59d28f', B:'#4ed9e8', C:'#f3b63f', D:'#ff6b3d', F:'#ff2d2d' };
-const GRADE_LABELS = { S:'최적', A:'안정', B:'양호', C:'보류', D:'주의', F:'해고 위기' };
-let data = null;
-let currentIdx = -1;
-let revealedSet = new Set();
+const VIZ_URL = (typeof CONFIG !== 'undefined' && CONFIG.TEAM_VIZ_URL) || 'http://localhost:3000';
+function openDebate() { window.open(VIZ_URL + '/executor', '_blank'); }
 
-// Sort: F first → S last (drama order)
-let ordered = [];
-
-async function init() {
-  const res = await fetch('data.json');
-  data = await res.json();
-  ordered = [...data.evaluations].sort((a,b) => GRADES.indexOf(b.grade) - GRADES.indexOf(a.grade));
-  document.getElementById('btnNext').disabled = false;
-  updateCounter();
-}
-
-function updateCounter() {
-  document.getElementById('counter').textContent = currentIdx >= 0 ? `${currentIdx + 1} / ${ordered.length}` : '- / ' + ordered.length;
-  document.getElementById('btnPrev').disabled = currentIdx <= 0;
-  document.getElementById('btnNext').disabled = currentIdx >= ordered.length - 1;
-  document.getElementById('btnReveal').disabled = currentIdx < 0 || revealedSet.has(ordered[currentIdx].id);
-}
-
-function showPerson(idx) {
-  const ev = ordered[idx];
-  const view = document.getElementById('personView');
-  const isRevealed = revealedSet.has(ev.id);
-  const gc = GRADE_COLORS[ev.grade];
-
-  view.innerHTML = `
-    <div class="nav-arrow left" onclick="prevPerson()">◀</div>
-    <div class="person-card">
-      <img class="person-photo ${isRevealed ? 'revealed' : ''}" src="${ev.img}" alt="${ev.name}" style="--grade-color:${gc};--grade-color-glow:${gc}40">
-      <div class="person-name">${ev.name}</div>
-      <div class="person-dept">${ev.department} ${ev.title}</div>
-      <div class="person-aptitude">AI 적합도 ${ev.aiAptitude}% · ${ev.category}</div>
-      <div class="grade-area" id="gradeArea">
-        ${isRevealed
-          ? `<div class="grade-final" style="color:${gc}">${ev.grade}</div><div class="grade-label" style="color:${gc}">${ev.grade}등급 — ${GRADE_LABELS[ev.grade]}</div>`
-          : `<div class="grade-hidden">? ? ?</div>`
-        }
-      </div>
-      <div class="keywords ${isRevealed ? 'show' : ''}" id="kwArea">
-        ${ev.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
-      </div>
-      <div class="person-summary ${isRevealed ? 'show' : ''}" id="sumArea">${ev.summary}</div>
-    </div>
-    <div class="nav-arrow right" onclick="nextPerson()">▶</div>
-  `;
-  updateCounter();
-}
-
-function nextPerson() {
-  if (currentIdx < ordered.length - 1) {
-    currentIdx++;
-    showPerson(currentIdx);
-  }
-}
-
-function prevPerson() {
-  if (currentIdx > 0) {
-    currentIdx--;
-    showPerson(currentIdx);
-  }
-}
-
-function revealGrade() {
-  if (currentIdx < 0) return;
-  const ev = ordered[currentIdx];
-  if (revealedSet.has(ev.id)) return;
-  const gc = GRADE_COLORS[ev.grade];
-  const gradeArea = document.getElementById('gradeArea');
-  const kwArea = document.getElementById('kwArea');
-  const sumArea = document.getElementById('sumArea');
-  const photo = document.querySelector('.person-photo');
-
-  // Spin
-  let spinIdx = 0;
-  const spinInterval = setInterval(() => {
-    gradeArea.innerHTML = `<div class="grade-spinning">${GRADES[spinIdx % 6]}</div>`;
-    spinIdx++;
-  }, 80);
-
-  // Slow + lock
-  setTimeout(() => {
-    clearInterval(spinInterval);
-    let slowIdx = 0;
-    const slowInterval = setInterval(() => {
-      const grades = [...GRADES, ...GRADES, ev.grade];
-      gradeArea.innerHTML = `<div class="grade-spinning" style="animation-duration:${0.15+slowIdx*0.03}s">${grades[slowIdx % grades.length]}</div>`;
-      slowIdx++;
-      if (slowIdx > 8) {
-        clearInterval(slowInterval);
-        gradeArea.innerHTML = `<div class="grade-final" style="color:${gc}">${ev.grade}</div><div class="grade-label" style="color:${gc}">${ev.grade}등급 — ${GRADE_LABELS[ev.grade]}</div>`;
-        photo.classList.add('revealed');
-        photo.style.setProperty('--grade-color', gc);
-        photo.style.setProperty('--grade-color-glow', gc + '40');
-        kwArea.classList.add('show');
-        sumArea.classList.add('show');
-        revealedSet.add(ev.id);
-        updateCounter();
-
-        if (window.speechSynthesis) {
-          const u = new SpeechSynthesisUtterance(`${ev.department} ${ev.title} ${ev.name}. 사전 평가 등급 ${ev.grade}등급, ${GRADE_LABELS[ev.grade]}.`);
-          u.lang = 'ko-KR'; u.rate = 0.85;
-          speechSynthesis.speak(u);
-        }
-      }
-    }, 180);
-  }, 1500);
-}
-
-async function autoAll() {
-  for (let i = 0; i < ordered.length; i++) {
-    currentIdx = i;
-    showPerson(i);
-    await new Promise(r => setTimeout(r, 500));
-    if (!revealedSet.has(ordered[i].id)) {
-      revealGrade();
-      await new Promise(r => setTimeout(r, 4500));
-    }
-  }
-}
-
-// Keyboard navigation
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextPerson(); }
-  if (e.key === 'ArrowLeft') prevPerson();
-  if (e.key === 'Enter') revealGrade();
-});
-
-init();
+// 서버 상태 체크
+fetch(VIZ_URL + '/api/settings', { mode: 'no-cors' })
+  .then(() => { document.getElementById('debateCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#59d28f;font-size:0.8rem">● 서버 연결됨</span>'; })
+  .catch(() => { document.getElementById('debateCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#ff6b3d;font-size:0.8rem">○ 서버 미연결</span>'; });
 </script>
+
 </body>
 </html>

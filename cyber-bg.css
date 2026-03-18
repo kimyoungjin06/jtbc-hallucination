@@ -1,0 +1,122 @@
+/* ═══════════════════════════════════════
+   사이버펑크 대기화면 — 공통 CSS
+   ═══════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+canvas#bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+.scanline { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, #00f0ff, transparent); opacity: 0.15; z-index: 100; animation: scanDown 4s linear infinite; pointer-events: none; }
+@keyframes scanDown { from { top: 0; } to { top: 100vh; } }
+
+/* Cyber top-bar overrides */
+.cyber .top-bar { z-index: 200; background: rgba(10,10,18,0.92); border-bottom-color: rgba(0,240,255,0.15); }
+.cyber .top-title { font-family: 'Orbitron', sans-serif; color: #00f0ff; text-shadow: 0 0 20px rgba(0,240,255,0.4); }
+.cyber .top-sub { font-family: 'Share Tech Mono', monospace; color: rgba(0,240,255,0.5); }
+.top-status { font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: #00f0ff; text-align: right; }
+.top-status .blink { animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Glitch text */
+.glitch { position: relative; }
+.glitch::before, .glitch::after { content: attr(data-text); position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; }
+.glitch::before { color: #00f0ff; animation: glitch1 3s infinite; clip-path: inset(0 0 80% 0); }
+.glitch::after { color: #ff00aa; animation: glitch2 3s infinite; clip-path: inset(80% 0 0 0); }
+@keyframes glitch1 { 0%,95%{transform:translateX(0)}96%{transform:translateX(-3px)}97%{transform:translateX(3px)}98%{transform:translateX(-1px)}100%{transform:translateX(0)} }
+@keyframes glitch2 { 0%,95%{transform:translateX(0)}96%{transform:translateX(2px)}97%{transform:translateX(-2px)}98%{transform:translateX(1px)}100%{transform:translateX(0)} }
+
+/* Layout */
+.cyber-main { position: relative; z-index: 10; width: 100%; height: 100vh; padding-top: 120px; display: flex; }
+.cyber-left {
+  flex: 0 0 25%; height: 100%; overflow: hidden; padding: 1vh 1.2vw;
+  border-right: 1px solid rgba(0,240,255,0.08);
+}
+.cyber-center {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; padding: 2vh;
+}
+.cyber-right {
+  flex: 0 0 25%; height: 100%; overflow: hidden; padding: 1vh 1.2vw;
+  border-left: 1px solid rgba(0,240,255,0.08);
+}
+
+/* Stream lines */
+.stream-line {
+  font-family: 'Share Tech Mono', monospace; font-size: 0.72rem; line-height: 1.5;
+  color: rgba(0,240,255,0.35); white-space: nowrap; overflow: hidden;
+}
+.stream-line.active { color: #00f0ff; text-shadow: 0 0 8px rgba(0,240,255,0.3); }
+.stream-line .val { color: #ffd700; }
+.stream-line .warn { color: #ff2d2d; }
+.stream-line .ok { color: #59d28f; }
+
+/* Computing hub */
+.computing-title {
+  font-family: 'Orbitron', sans-serif; font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  color: #00f0ff; letter-spacing: 0.2em; margin-bottom: 2vh;
+  text-shadow: 0 0 30px rgba(0,240,255,0.3);
+}
+.computing-ring {
+  width: clamp(160px, 18vw, 240px); height: clamp(160px, 18vw, 240px);
+  border: 3px solid rgba(0,240,255,0.15); border-top-color: #00f0ff;
+  border-radius: 50%; margin: 0 auto 2vh;
+  animation: spin 2s linear infinite;
+  position: relative; display: flex; align-items: center; justify-content: center;
+}
+.computing-ring::after {
+  content: ''; position: absolute; inset: 12px;
+  border: 2px solid rgba(255,0,170,0.1); border-bottom-color: #ff00aa;
+  border-radius: 50%; animation: spin 3s linear infinite reverse;
+}
+.computing-ring-inner {
+  font-family: 'Orbitron', sans-serif; font-size: clamp(1.6rem, 3.5vw, 3rem);
+  font-weight: 900; color: #00f0ff; z-index: 1;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.computing-progress { width: 55%; max-width: 360px; margin: 0 auto 1.5vh; }
+.progress-bar { height: 3px; background: rgba(0,240,255,0.1); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #00f0ff, #ff00aa); width: 0%; transition: width 0.3s; }
+.progress-label { font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: rgba(0,240,255,0.5); text-align: center; margin-top: 0.5vh; }
+
+.metric-cards { display: flex; gap: 1vw; flex-wrap: wrap; justify-content: center; margin-top: 2vh; }
+.metric-card {
+  padding: 0.8vh 1vw; border: 1px solid rgba(0,240,255,0.1); border-radius: 4px;
+  background: rgba(0,240,255,0.02); min-width: 100px; text-align: center;
+}
+.metric-card .mc-label { font-size: 0.6rem; color: rgba(0,240,255,0.4); font-family: 'Share Tech Mono', monospace; }
+.metric-card .mc-value { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; color: #00f0ff; margin-top: 0.2vh; }
+.metric-card .mc-value.fluctuate { animation: flicker 0.15s infinite; }
+@keyframes flicker { 0%,100%{opacity:1}50%{opacity:0.7} }
+
+/* Right panel: person mini cards */
+.person-mini {
+  padding: 0.6vh 0; border-bottom: 1px solid rgba(0,240,255,0.05);
+  display: flex; flex-direction: column;
+}
+.pm-photo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(0,240,255,0.2); flex-shrink: 0; }
+.pm-info { flex: 1; min-width: 0; }
+.pm-name { font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+.pm-dept { font-size: 0.6rem; color: #00f0ff; opacity: 0.5; }
+.pm-scores { display: flex; gap: 3px; margin-top: 2px; }
+.pm-score-dot { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; padding: 1px 4px; border-radius: 2px; background: rgba(0,240,255,0.05); border: 1px solid rgba(0,240,255,0.1); }
+
+/* ── Gauge bars (v2) ── */
+.pm-header { display: flex; align-items: center; gap: 0.5vw; min-height: 32px; margin-bottom: 0.3vh; }
+.pm-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 6px; }
+.gauge-row { display: flex; align-items: center; gap: 3px; height: 14px; }
+.gauge-label { font-family: 'Share Tech Mono', monospace; font-size: 0.5rem; color: rgba(0,240,255,0.4); width: 3em; text-align: right; flex-shrink: 0; }
+.gauge-track { flex: 1; height: 3px; background: rgba(0,240,255,0.06); border-radius: 2px; overflow: hidden; min-width: 30px; }
+.gauge-fill { height: 100%; border-radius: 2px; transition: width 0.15s, background 0.15s; }
+.gauge-grade { font-family: 'Share Tech Mono', monospace; font-size: 0.55rem; font-weight: 700; width: 1em; text-align: center; flex-shrink: 0; }
+
+/* ── Radar chart ── */
+canvas#radarCanvas { display: block; margin: 0 auto; }
+
+/* ── Survey stream ── */
+.survey-stream { margin-top: 1.5vh; border-top: 1px solid rgba(0,240,255,0.06); padding-top: 1vh; }
+.survey-line {
+  font-size: 0.68rem; line-height: 1.5; color: rgba(0,240,255,0.3);
+  padding: 2px 0; transition: color 0.5s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.survey-line.active { color: rgba(0,240,255,0.7); }
+.survey-dim { color: #ff00aa; font-weight: 700; font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; }

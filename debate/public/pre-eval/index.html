@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>할루시네이션: 해고전쟁 — 사전 평가</title>
+<style>
+:root {
+  --bg: #05090d; --surface: #0f1923; --border: rgba(255,255,255,0.08);
+  --text: #e8eaed; --muted: rgba(255,255,255,0.4); --accent: #6366f1;
+  --gold: #ffd700; --green: #59d28f; --cyan: #4ed9e8; --orange: #f3b63f; --red-light: #ff6b3d; --red: #ff2d2d;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; }
+
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--border); }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.header-left img { height: 28px; }
+.header-title { font-size: 1.1rem; font-weight: 800; }
+.header-sub { font-size: 0.75rem; color: var(--muted); }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.header-right img { height: 30px; filter: brightness(1.3); }
+
+/* Main */
+.main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.page-title { text-align: center; margin-bottom: 2rem; }
+.page-title h1 { font-size: 1.6rem; color: var(--gold); margin-bottom: 0.3rem; }
+.page-title p { font-size: 0.85rem; color: var(--muted); }
+
+/* Controls */
+.controls { display: flex; justify-content: center; gap: 12px; margin-bottom: 2rem; }
+.btn { padding: 10px 24px; border: 2px solid var(--accent); background: transparent; color: var(--accent); border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn:hover { background: rgba(99,102,241,0.15); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-danger { border-color: var(--red); color: var(--red); }
+.btn-danger:hover { background: rgba(255,45,45,0.15); }
+
+/* Grid */
+.eval-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+/* Card */
+.eval-card { background: var(--surface); border: 2px solid var(--border); border-radius: 16px; padding: 1.5rem; position: relative; overflow: hidden; transition: all 0.5s; }
+.eval-card.revealed { border-color: var(--card-color); }
+.eval-card.revealing { animation: cardPulse 0.5s ease-out; }
+@keyframes cardPulse { 0% { transform: scale(0.95); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
+
+.card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
+.card-name { font-size: 1.2rem; font-weight: 800; }
+.card-title { font-size: 0.75rem; color: var(--muted); }
+.card-aptitude { font-size: 0.65rem; color: var(--accent); margin-top: 2px; }
+
+/* Grade display */
+.grade-area { text-align: center; padding: 1rem 0; min-height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.grade-hidden { font-size: 1.2rem; color: var(--muted); letter-spacing: 0.2em; }
+.grade-spinning { font-size: 3rem; font-weight: 900; animation: gradeShake 0.08s infinite; color: var(--gold); }
+.grade-final { font-size: 4rem; font-weight: 900; text-shadow: 0 0 40px currentColor; animation: gradeLock 0.6s ease-out; }
+.grade-label { font-size: 0.85rem; font-weight: 700; margin-top: 4px; }
+@keyframes gradeShake { 0% { transform: translateY(-2px); } 50% { transform: translateY(2px); } 100% { transform: translateY(-2px); } }
+@keyframes gradeLock { 0% { transform: scale(2); opacity: 0; } 40% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
+
+/* Keywords */
+.keywords { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.75rem; justify-content: center; }
+.keyword { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted); }
+
+/* Quote */
+.card-quote { font-size: 0.75rem; color: var(--muted); font-style: italic; text-align: center; margin-top: 0.75rem; }
+
+/* Summary */
+.card-summary { font-size: 0.78rem; color: var(--text); line-height: 1.5; margin-top: 0.75rem; opacity: 0; transition: opacity 0.5s; }
+.eval-card.revealed .card-summary { opacity: 1; }
+
+/* Radar chart */
+.radar-area { display: flex; justify-content: center; margin-top: 0.75rem; opacity: 0; transition: opacity 0.5s; }
+.eval-card.revealed .radar-area { opacity: 1; }
+
+/* Character badge */
+.char-badge { font-size: 0.65rem; color: var(--orange); margin-top: 4px; }
+
+/* Spotlight overlay */
+.spotlight { position: fixed; inset: 0; background: rgba(5,9,13,0.92); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.spotlight-content { text-align: center; max-width: 500px; animation: spotlightIn 0.8s ease-out; }
+@keyframes spotlightIn { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.spotlight-name { font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem; }
+.spotlight-dept { font-size: 1rem; color: var(--muted); margin-bottom: 1.5rem; }
+.spotlight-grade { font-size: 6rem; font-weight: 900; margin: 1rem 0; }
+.spotlight-grade-label { font-size: 1.2rem; font-weight: 700; }
+.spotlight-summary { font-size: 1rem; color: rgba(255,255,255,0.8); line-height: 1.7; margin: 1.5rem 0; }
+.spotlight-quote { font-size: 1.1rem; color: var(--gold); font-style: italic; margin: 1rem 0; }
+.spotlight-keywords { display: flex; gap: 8px; justify-content: center; margin: 1rem 0; }
+.spotlight-keywords .keyword { font-size: 0.85rem; padding: 4px 12px; }
+
+/* Responsive */
+@media (max-width: 900px) { .eval-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .eval-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <img src="jtbc.png" alt="JTBC">
+    <div>
+      <div class="header-title">할루시네이션: 해고전쟁</div>
+      <div class="header-sub">ORBIT CONSULTING — AI 인사 검증 프로그램</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <img src="kisti.svg" alt="KISTI">
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">
+    <h1>사전 평가</h1>
+    <p>AI 적합도 + 출연자 역량 기반 상대평가 (S~F 각 1명)</p>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-primary" onclick="startReveal()">전체 공개 시작</button>
+    <button class="btn" onclick="revealAll()">즉시 공개</button>
+    <button class="btn btn-danger" onclick="resetAll()">초기화</button>
+  </div>
+
+  <div class="eval-grid" id="grid"></div>
+</div>
+
+<div class="spotlight" id="spotlight" style="display:none" onclick="closeSpotlight()">
+  <div class="spotlight-content" id="spotlightContent"></div>
+</div>
+
+<script>
+const GRADES = ['S','A','B','C','D','F'];
+const GRADE_COLORS = { S:'#ffd700', A:'#59d28f', B:'#4ed9e8', C:'#f3b63f', D:'#ff6b3d', F:'#ff2d2d' };
+const GRADE_LABELS = { S:'최적', A:'안정', B:'양호', C:'보류', D:'주의', F:'해고 위기' };
+const GRADE_VAL = { S:1, A:0.85, B:0.7, C:0.5, D:0.3, F:0.1 };
+let data = null;
+let revealedSet = new Set();
+
+async function init() {
+  const res = await fetch('data.json');
+  data = await res.json();
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = data.evaluations.map(ev => `
+    <div class="eval-card" id="card-${ev.id}" style="--card-color:${GRADE_COLORS[ev.grade]}" onclick="showSpotlight('${ev.id}')">
+      <div class="card-header">
+        <div>
+          <div class="card-name">${ev.name}</div>
+          <div class="card-title">${ev.department} ${ev.title}</div>
+          <div class="card-aptitude">AI 적합도 ${ev.aiAptitude}% · ${ev.category}</div>
+          <div class="char-badge">${ev.character}</div>
+        </div>
+      </div>
+      <div class="grade-area" id="grade-${ev.id}">
+        <div class="grade-hidden">? ? ?</div>
+      </div>
+      <div class="keywords" style="opacity:0" id="kw-${ev.id}">
+        ${ev.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
+      </div>
+      <div class="card-summary" id="sum-${ev.id}">${ev.summary}</div>
+      <div class="radar-area" id="radar-${ev.id}"></div>
+    </div>
+  `).join('');
+}
+
+function revealCard(id) {
+  const ev = data.evaluations.find(e => e.id === id);
+  if (!ev) return;
+  const card = document.getElementById('card-' + id);
+  const gradeEl = document.getElementById('grade-' + id);
+  const kwEl = document.getElementById('kw-' + id);
+  const radarEl = document.getElementById('radar-' + id);
+
+  card.classList.add('revealing');
+  setTimeout(() => card.classList.remove('revealing'), 500);
+
+  // Spin
+  let spinIdx = 0;
+  const spinInterval = setInterval(() => {
+    gradeEl.innerHTML = `<div class="grade-spinning">${GRADES[spinIdx % 6]}</div>`;
+    spinIdx++;
+  }, 80);
+
+  // Slow + lock
+  setTimeout(() => {
+    clearInterval(spinInterval);
+    let slowIdx = 0;
+    const slowInterval = setInterval(() => {
+      const grades = [...GRADES, ...GRADES, ev.grade];
+      gradeEl.innerHTML = `<div class="grade-spinning" style="animation-duration:${0.15 + slowIdx*0.03}s">${grades[slowIdx % grades.length]}</div>`;
+      slowIdx++;
+      if (slowIdx > 8) {
+        clearInterval(slowInterval);
+        gradeEl.innerHTML = `
+          <div class="grade-final" style="color:${GRADE_COLORS[ev.grade]}">${ev.grade}</div>
+          <div class="grade-label" style="color:${GRADE_COLORS[ev.grade]}">${GRADE_LABELS[ev.grade]}</div>
+        `;
+        card.classList.add('revealed');
+        card.style.borderColor = GRADE_COLORS[ev.grade];
+        kwEl.style.opacity = '1';
+        radarEl.innerHTML = createRadar(ev.scores, GRADE_COLORS[ev.grade]);
+        revealedSet.add(id);
+
+        // TTS
+        if (window.speechSynthesis) {
+          const u = new SpeechSynthesisUtterance(`${ev.department} ${ev.title} ${ev.name}. 사전 평가 등급 ${ev.grade}등급, ${GRADE_LABELS[ev.grade]}.`);
+          u.lang = 'ko-KR'; u.rate = 0.85;
+          speechSynthesis.speak(u);
+        }
+      }
+    }, 180);
+  }, 1500);
+}
+
+async function startReveal() {
+  // Reveal F first, then D, C, B, A, S (bottom-up drama)
+  const order = [...data.evaluations].sort((a,b) => GRADES.indexOf(b.grade) - GRADES.indexOf(a.grade));
+  for (const ev of order) {
+    if (revealedSet.has(ev.id)) continue;
+    revealCard(ev.id);
+    await new Promise(r => setTimeout(r, 4000));
+  }
+}
+
+function revealAll() {
+  for (const ev of data.evaluations) {
+    if (revealedSet.has(ev.id)) continue;
+    const card = document.getElementById('card-' + ev.id);
+    const gradeEl = document.getElementById('grade-' + ev.id);
+    const kwEl = document.getElementById('kw-' + ev.id);
+    const radarEl = document.getElementById('radar-' + ev.id);
+    gradeEl.innerHTML = `<div class="grade-final" style="color:${GRADE_COLORS[ev.grade]}">${ev.grade}</div><div class="grade-label" style="color:${GRADE_COLORS[ev.grade]}">${GRADE_LABELS[ev.grade]}</div>`;
+    card.classList.add('revealed');
+    card.style.borderColor = GRADE_COLORS[ev.grade];
+    kwEl.style.opacity = '1';
+    radarEl.innerHTML = createRadar(ev.scores, GRADE_COLORS[ev.grade]);
+    revealedSet.add(ev.id);
+  }
+}
+
+function resetAll() {
+  revealedSet.clear();
+  renderGrid();
+}
+
+function showSpotlight(id) {
+  if (!revealedSet.has(id)) return;
+  const ev = data.evaluations.find(e => e.id === id);
+  const el = document.getElementById('spotlightContent');
+  el.innerHTML = `
+    <div class="spotlight-name">${ev.name}</div>
+    <div class="spotlight-dept">${ev.department} ${ev.title} · AI 적합도 ${ev.aiAptitude}%</div>
+    <div class="spotlight-grade" style="color:${GRADE_COLORS[ev.grade]}">${ev.grade}</div>
+    <div class="spotlight-grade-label" style="color:${GRADE_COLORS[ev.grade]}">${ev.grade}등급 — ${GRADE_LABELS[ev.grade]}</div>
+    <div class="spotlight-keywords">${ev.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}</div>
+    <div class="spotlight-summary">${ev.summary}</div>
+    <div class="spotlight-quote">"${ev.quote}"</div>
+    ${createRadar(ev.scores, GRADE_COLORS[ev.grade], 200)}
+  `;
+  document.getElementById('spotlight').style.display = 'flex';
+}
+
+function closeSpotlight() {
+  document.getElementById('spotlight').style.display = 'none';
+}
+
+function createRadar(scores, color, size = 140) {
+  const dims = data.dimensions;
+  const n = dims.length;
+  const cx = 100, cy = 100, r = 80;
+  const ringPts = (radius) => dims.map((_,i) => {
+    const a = (Math.PI*2*i)/n - Math.PI/2;
+    return `${cx+radius*Math.cos(a)},${cy+radius*Math.sin(a)}`;
+  }).join(' ');
+  const dataPts = dims.map((d,i) => {
+    const v = GRADE_VAL[scores[d.key]] || 0.5;
+    const a = (Math.PI*2*i)/n - Math.PI/2;
+    return `${cx+r*v*Math.cos(a)},${cy+r*v*Math.sin(a)}`;
+  }).join(' ');
+  const labels = dims.map((d,i) => {
+    const a = (Math.PI*2*i)/n - Math.PI/2;
+    return `<text x="${cx+(r+16)*Math.cos(a)}" y="${cy+(r+16)*Math.sin(a)}" text-anchor="middle" dominant-baseline="middle" fill="rgba(255,255,255,0.5)" font-size="6.5" font-weight="600">${d.label.replace(/\s/g,'').slice(0,4)} ${scores[d.key]}</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 200 200" width="${size}" height="${size}">
+    ${[0.25,0.5,0.75,1].map(s => `<polygon points="${ringPts(r*s)}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>`).join('')}
+    ${dims.map((_,i) => { const a=(Math.PI*2*i)/n-Math.PI/2; return `<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a)}" y2="${cy+r*Math.sin(a)}" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>`; }).join('')}
+    <polygon points="${dataPts}" fill="${color}30" stroke="${color}" stroke-width="2"/>
+    ${dims.map((d,i) => { const v=GRADE_VAL[scores[d.key]]||0.5; const a=(Math.PI*2*i)/n-Math.PI/2; return `<circle cx="${cx+r*v*Math.cos(a)}" cy="${cy+r*v*Math.sin(a)}" r="2.5" fill="${color}"/>`; }).join('')}
+    ${labels}
+  </svg>`;
+}
+
+init();
+</script>
+</body>
+</html>

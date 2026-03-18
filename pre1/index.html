@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>할루시네이션: 해고전쟁 — 사전평가 v1</title>
+<link rel="stylesheet" href="../common.css">
+<link rel="stylesheet" href="../cyber-bg.css">
+<style>
+:root {
+  --bg: #05090d; --border: rgba(255,255,255,0.08);
+  --text: #e8eaed; --muted: rgba(255,255,255,0.4); --accent: #6366f1;
+  --gold: #ffd700; --green: #59d28f; --cyan: #4ed9e8; --orange: #f3b63f; --red-light: #ff6b3d; --red: #ff2d2d;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0a12; color: var(--text); font-family: 'Noto Sans KR', -apple-system, sans-serif; height: 100vh; overflow: hidden; cursor: none; }
+/* 대기화면 ↔ 평가화면 전환 */
+.cyber-standby { transition: opacity 0.6s; }
+.cyber-standby.hidden { opacity: 0; pointer-events: none; position: absolute; }
+.app { display: none; } /* 숫자키 누를 때까지 숨김 */
+.app.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+.app { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding-top: 120px; }
+
+.person-card { text-align: center; animation: fadeIn 0.5s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.person-photo {
+  width: clamp(160px, 20vw, 240px); height: clamp(160px, 20vw, 240px);
+  border-radius: 50%; object-fit: cover; border: 5px solid var(--border);
+  margin: 0 auto 2.5vh; display: block; transition: all 0.6s;
+}
+.person-photo.revealed { box-shadow: 0 0 60px var(--glow); }
+
+.person-name { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 900; margin-bottom: 0.5vh; }
+.person-dept { font-size: clamp(1.1rem, 1.8vw, 1.5rem); color: var(--muted); margin-bottom: 2.5vh; }
+
+.grade-area { min-height: 18vh; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 2vh; }
+.grade-hidden { font-size: clamp(2.5rem, 4vw, 3.5rem); color: var(--muted); letter-spacing: 0.4em; }
+.grade-spin { font-size: clamp(6rem, 12vw, 10rem); font-weight: 900; }
+.grade-final { font-size: clamp(7rem, 14vw, 12rem); font-weight: 900; text-shadow: 0 0 80px currentColor, 0 0 30px currentColor; animation: pop 0.5s cubic-bezier(0.22,1,0.36,1); }
+.grade-sub { font-size: clamp(1.2rem, 2vw, 1.8rem); font-weight: 700; margin-top: 0.5vh; }
+@keyframes pop { 0% { transform: scale(3); opacity: 0; } 50% { transform: scale(0.85); } 100% { transform: scale(1); opacity: 1; } }
+
+.keywords { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 2vh; opacity: 0; transition: opacity 0.6s; }
+.keywords.show { opacity: 1; }
+.keyword { font-size: clamp(0.9rem, 1.2vw, 1.1rem); padding: 6px 18px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: var(--muted); }
+
+.summary { font-size: clamp(1rem, 1.4vw, 1.2rem); color: rgba(255,255,255,0.6); max-width: 500px; text-align: center; line-height: 1.7; opacity: 0; transition: opacity 0.6s; }
+.summary.show { opacity: 1; }
+
+/* idle-screen은 더 이상 사용하지 않음 — 사이버펑크 대기화면으로 대체 */
+</style>
+</head>
+<body class="cyber">
+
+<canvas id="bgCanvas"></canvas>
+<div class="scanline"></div>
+
+<div class="top-bar">
+  <div class="top-left">
+    <img src="../jtbc.png" alt="JTBC">
+    <div class="top-title-wrap">
+      <div class="top-title glitch" data-text="ARCHE SYSTEM">ARCHE SYSTEM</div>
+      <div class="top-sub">ORBIT CONSULTING — 사전평가</div>
+    </div>
+  </div>
+  <div class="top-status">
+    <div>PRE-EVALUATION v1.0</div>
+    <div><span class="blink">●</span> LIVE — <span id="clock">00:00:00</span></div>
+  </div>
+  <div class="top-right"><img src="../kisti.svg" alt="KISTI"></div>
+</div>
+
+<!-- 사이버펑크 대기화면 -->
+<div class="cyber-standby" id="cyberStandby">
+  <div class="cyber-main">
+    <div class="cyber-left">
+      <div id="leftStreams"></div>
+      <div class="survey-stream" id="surveyStream"></div>
+    </div>
+    <div class="cyber-center">
+      <div class="computing-hub">
+        <div class="computing-title">PRE-EVALUATION</div>
+        <canvas id="radarCanvas"></canvas>
+        <div class="computing-progress">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-label" id="progressLabel">INITIALIZING...</div>
+        </div>
+        <div class="metric-cards" id="metricCards"></div>
+      </div>
+    </div>
+    <div class="cyber-right" id="rightScores"></div>
+  </div>
+</div>
+
+<!-- 평가 화면 (숫자키로 활성화) -->
+<div class="app" id="app"></div>
+
+<script src="../config.js"></script>
+<script src="../cyber-bg.js"></script>
+<script>
+/* 대기화면 초기화 */
+// 직급순: 차장 → 과장 → 대리 → 주임 → 사원 → 인턴
+const _people = [
+  { id:'p1', name:'하석진', title:'차장', dept:'미래전략기획실', img:'../img/hasukjin.png' },
+  { id:'p5', name:'곽재식', title:'과장', dept:'품질관리팀',     img:'../img/kwakjaesik.png' },
+  { id:'p2', name:'황제성', title:'대리', dept:'글로벌영업팀',   img:'../img/hwangjesung.png' },
+  { id:'p3', name:'츠키',   title:'주임', dept:'인사팀',         img:'../img/tsuki.png' },
+  { id:'p6', name:'가온',   title:'사원', dept:'홍보마케팅팀',   img:'../img/gaon.png' },
+  { id:'p4', name:'허성범', title:'인턴', dept:'인사팀',         img:'../img/heosung.png' },
+];
+CyberBG.init({
+  scores: CONFIG.PRE_SCORES || {},
+  people: _people,
+  phase: 'pre',
+});
+
+let standbyActive = true;
+function exitStandby() {
+  if (!standbyActive) return;
+  standbyActive = false;
+  document.getElementById('cyberStandby').classList.add('hidden');
+  document.getElementById('app').classList.add('active');
+}
+</script>
+<script>
+const DATA = [
+  { id:"p6", name:"가온", title:"사원", department:"홍보마케팅팀", img:"../img/gaon.png", grade:"F", keywords:["#잠재력만","#실무미검증","#증명필요"], summary:"IoT 취미 수준의 기술 경험. 전문 역량이 가장 미검증된 인물." },
+  { id:"p3", name:"츠키", title:"주임", department:"인사팀", img:"../img/tsuki.png", grade:"D", keywords:["#적응력","#기술배경없음","#맹목의존위험"], summary:"적응력과 표현력은 있으나 기술 배경 전무. 적합도 81%가 오히려 리스크." },
+  { id:"p2", name:"황제성", title:"대리", department:"글로벌 영업팀", img:"../img/hwangjesung.png", grade:"C", keywords:["#숨겨진브레인","#소통력","#AI경험부재"], summary:"수능 수리 1등급의 숨겨진 브레인. 소통력은 최고이나 AI 직접 경험 없음." },
+  { id:"p4", name:"허성범", title:"인턴", department:"인사팀", img:"../img/heosung.png", grade:"B", keywords:["#AI전문가","#검증력최고","#경험부족"], summary:"KAIST AI 대학원생. AI 검증력 최고이나 조직 경험이 부족한 인턴." },
+  { id:"p1", name:"하석진", title:"차장", department:"미래 전략 기획실", img:"../img/hasukjin.png", grade:"A", keywords:["#공학적사고","#리더십","#학습의지"], summary:"기계공학 전공, AI 방송 다수 경험, CES 2025 탐방. 공학 기반 리더." },
+  { id:"p5", name:"곽재식", title:"과장", department:"품질관리팀", img:"../img/kwakjaesik.png", grade:"S", keywords:["#AI윤리전문가","#걸어다니는백과사전","#균형감각"], summary:"KAIST 석사, 교수, AI 저서 보유. 6명 중 유일한 AI 윤리 전문가." }
+];
+const GRADES = ['S','A','B','C','D','F'];
+const GC = { S:'#ffd700', A:'#59d28f', B:'#4ed9e8', C:'#f3b63f', D:'#ff6b3d', F:'#ff2d2d' };
+const GL = { S:'최적', A:'안정', B:'양호', C:'보류', D:'주의', F:'해고 위기' };
+
+let idx = -1, phase = 'show', revealed = new Set(), spinning = false;
+
+function showPerson(i) {
+  const ev = DATA[i]; const done = revealed.has(ev.id); const gc = GC[ev.grade];
+  document.getElementById('app').innerHTML = `<div class="person-card">
+    <img class="person-photo ${done?'revealed':''}" id="photo" src="${ev.img}" style="border-color:${done?gc:'var(--border)'};--glow:${gc}40">
+    <div class="person-name">${ev.name}</div>
+    <div class="person-dept">${ev.department} ${ev.title}</div>
+    <div class="grade-area" id="ga">${done
+      ? `<div class="grade-final" style="color:${gc}">${ev.grade}</div><div class="grade-sub" style="color:${gc}">${ev.grade}등급 — ${GL[ev.grade]}</div>`
+      : `<div class="grade-hidden">? ? ?</div>`}</div>
+    <div class="keywords ${done?'show':''}" id="kw">${ev.keywords.map(k=>`<span class="keyword">${k}</span>`).join('')}</div>
+    <div class="summary ${done?'show':''}" id="sm">${ev.summary}</div>
+  </div>`;
+}
+
+function reveal() {
+  if (idx<0||spinning) return;
+  const ev = DATA[idx]; if (revealed.has(ev.id)) return;
+  spinning = true; const gc = GC[ev.grade]; const ga = document.getElementById('ga');
+  let gi = 0;
+  const fast = setInterval(()=>{ ga.innerHTML=`<div class="grade-spin" style="color:${GC[GRADES[gi%6]]}">${GRADES[gi%6]}</div>`; gi++; },70);
+  setTimeout(()=>{
+    clearInterval(fast); let si=0;
+    const slow = setInterval(()=>{
+      const pool=[...GRADES,...GRADES,ev.grade]; const g=pool[si%pool.length];
+      ga.innerHTML=`<div class="grade-spin" style="color:${GC[g]}">${g}</div>`; si++;
+      if(si>10){ clearInterval(slow);
+        ga.innerHTML=`<div class="grade-final" style="color:${gc}">${ev.grade}</div><div class="grade-sub" style="color:${gc}">${ev.grade}등급 — ${GL[ev.grade]}</div>`;
+        const p=document.getElementById('photo'); if(p){p.classList.add('revealed');p.style.borderColor=gc;}
+        document.getElementById('kw')?.classList.add('show');
+        document.getElementById('sm')?.classList.add('show');
+        revealed.add(ev.id); spinning=false;
+        if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(`${ev.department} ${ev.title} ${ev.name}. 사전 평가 등급 ${ev.grade}등급, ${GL[ev.grade]}.`);u.lang='ko-KR';u.rate=0.85;speechSynthesis.speak(u);}
+      }
+    },160);
+  },1800);
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key===' '){ e.preventDefault(); exitStandby();
+    if(phase==='show'){ if(idx<DATA.length-1){idx++;showPerson(idx);phase='reveal';} }
+    else { reveal(); phase='show'; }
+  }
+  if(e.key>='1'&&e.key<='6'){ e.preventDefault(); exitStandby(); if(!spinning){idx=parseInt(e.key)-1;showPerson(idx);phase='reveal';} }
+});
+</script>
+</body>
+</html>

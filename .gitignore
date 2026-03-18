@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+debate/node_modules/
+
+# Next.js build
+.next/
+debate/.next/
+
+# Environment (API keys)
+.env
+.env.local
+debate/.env
+debate/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

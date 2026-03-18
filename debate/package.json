@@ -1,0 +1,41 @@
+{
+  "name": "team-agent-vis",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:web": "next dev",
+    "dev:redis": "sh -lc 'PATH=\"$HOME/.local/bin:$PATH\" redis-server --save \"\" --appendonly no --port \"${REDIS_PORT:-6379}\"'",
+    "dev:socket": "node ./server/socket-runtime.mjs",
+    "dev:stack": "concurrently -k -n web,socket \"npm:dev:web\" \"npm:dev:socket\"",
+    "dev:stack:full": "concurrently -k -n redis,web,socket \"npm:dev:redis\" \"npm:dev:web\" \"npm:dev:socket\"",
+    "pilot:case01": "node ./scripts/pilot-case01.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@google/genai": "^1.45.0",
+    "@langchain/core": "^1.1.31",
+    "@langchain/langgraph": "^1.2.1",
+    "@types/fluent-ffmpeg": "^2.1.28",
+    "dotenv": "^17.3.1",
+    "ffmpeg-static": "^5.3.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "next": "^15.0.0",
+    "openai": "^6.27.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "redis": "^5.11.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.2"
+  }
+}

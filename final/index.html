@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>할루시네이션: 해고전쟁 — 최종 인사발령</title>
+<link rel="stylesheet" href="../common.css">
+<link rel="stylesheet" href="../cyber-bg.css">
+<style>
+:root {
+  --cyan: #00f0ff; --magenta: #ff00aa; --gold: #ffd700; --red: #ff2d2d;
+  --green: #59d28f; --orange: #ff6b3d; --blue: #6366f1;
+  --bg: #0a0a12;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: #e0e0e0; font-family: 'Noto Sans KR', sans-serif; height: 100vh; overflow: hidden; cursor: none; }
+
+/* ── Verdict overlay ── */
+.verdict-overlay {
+  position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.97);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  padding: 4vh 4vw;
+}
+.verdict-overlay.show { display: flex; }
+
+.verdict-top { display: flex; align-items: center; gap: 3vw; margin-bottom: 3vh; }
+.verdict-photo { width: clamp(120px, 14vw, 180px); height: clamp(120px, 14vw, 180px); border-radius: 50%; object-fit: cover; border: 4px solid var(--cyan); }
+.verdict-identity { text-align: left; }
+.verdict-name { font-family: 'Orbitron', sans-serif; font-size: clamp(2rem, 3.5vw, 3rem); font-weight: 900; }
+.verdict-dept { font-size: clamp(1rem, 1.5vw, 1.3rem); color: var(--cyan); opacity: 0.6; margin-top: 0.3vh; }
+.verdict-grade-badge { display: flex; align-items: center; gap: 1.5vw; margin-top: 1vh; }
+.verdict-grade { font-family: 'Orbitron', sans-serif; font-size: clamp(4rem, 8vw, 6rem); font-weight: 900; text-shadow: 0 0 60px currentColor; animation: verdictPop 0.6s cubic-bezier(0.22,1,0.36,1); }
+.verdict-label { font-size: clamp(1.1rem, 1.8vw, 1.5rem); font-weight: 700; }
+
+/* 평가문 3단계 */
+.verdict-speech { max-width: 700px; text-align: center; }
+.verdict-eval {
+  font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: rgba(255,255,255,0.75);
+  line-height: 2; margin-bottom: 2.5vh; opacity: 0; transition: opacity 0.8s;
+}
+.verdict-eval.show { opacity: 1; }
+.verdict-conclusion {
+  font-size: clamp(1.3rem, 2vw, 1.8rem); font-weight: 900;
+  line-height: 1.8; margin-bottom: 1.5vh; opacity: 0; transition: opacity 0.8s;
+}
+.verdict-conclusion.show { opacity: 1; }
+.verdict-order {
+  font-size: clamp(1rem, 1.4vw, 1.2rem); color: rgba(255,255,255,0.5);
+  font-style: italic; line-height: 1.7; opacity: 0; transition: opacity 0.8s;
+}
+.verdict-order.show { opacity: 1; }
+
+.verdict-status {
+  font-family: 'Orbitron', sans-serif; font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-weight: 900; margin-top: 3vh; letter-spacing: 0.15em;
+  opacity: 0; transition: opacity 0.6s;
+}
+.verdict-status.show { opacity: 1; }
+
+@keyframes verdictPop { 0%{transform:scale(3);opacity:0}50%{transform:scale(.85)}100%{transform:scale(1);opacity:1} }
+
+/* Scan line effect */
+.scanline { position: fixed; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: 0.15; z-index: 100; animation: scanDown 4s linear infinite; pointer-events: none; }
+@keyframes scanDown { from { top: 0; } to { top: 100vh; } }
+
+/* Glitch text */
+.glitch { position: relative; }
+.glitch::before, .glitch::after { content: attr(data-text); position: absolute; left: 0; top: 0; width: 100%; overflow: hidden; }
+.glitch::before { color: var(--cyan); animation: glitch1 3s infinite; clip-path: inset(0 0 80% 0); }
+.glitch::after { color: var(--magenta); animation: glitch2 3s infinite; clip-path: inset(80% 0 0 0); }
+@keyframes glitch1 { 0%,95%{transform:translateX(0)}96%{transform:translateX(-3px)}97%{transform:translateX(3px)}98%{transform:translateX(-1px)}100%{transform:translateX(0)} }
+@keyframes glitch2 { 0%,95%{transform:translateX(0)}96%{transform:translateX(2px)}97%{transform:translateX(-2px)}98%{transform:translateX(1px)}100%{transform:translateX(0)} }
+</style>
+</head>
+<body class="cyber">
+
+<canvas id="bgCanvas"></canvas>
+<div class="scanline"></div>
+
+<div class="top-bar">
+  <div class="top-left">
+    <img src="../jtbc.png" alt="JTBC">
+    <div class="top-title-wrap">
+      <div class="top-title glitch" data-text="ARCHE SYSTEM">ARCHE SYSTEM</div>
+      <div class="top-sub">ORBIT CONSULTING — 최종 인사발령</div>
+    </div>
+  </div>
+  <div class="top-status">
+    <div>EVALUATION ENGINE v3.7.1</div>
+    <div><span class="blink">●</span> LIVE — <span id="clock">00:00:00</span></div>
+  </div>
+  <div class="top-right"><img src="../kisti.svg" alt="KISTI"></div>
+</div>
+
+<div class="cyber-main">
+  <div class="cyber-left">
+    <div id="leftStreams"></div>
+    <div class="survey-stream" id="surveyStream"></div>
+  </div>
+  <div class="cyber-center">
+    <div class="computing-hub">
+      <div class="computing-title">FINAL EVALUATION</div>
+      <canvas id="radarCanvas"></canvas>
+      <div class="computing-progress">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">INITIALIZING ARCHE ALGORITHM...</div>
+      </div>
+      <div class="metric-cards" id="metricCards"></div>
+    </div>
+  </div>
+  <div class="cyber-right" id="rightScores"></div>
+</div>
+
+<div class="verdict-overlay" id="verdictOverlay">
+  <div class="verdict-top">
+    <img class="verdict-photo" id="vPhoto" src="">
+    <div class="verdict-identity">
+      <div class="verdict-name" id="vName"></div>
+      <div class="verdict-dept" id="vDept"></div>
+      <div class="verdict-grade-badge" id="vGradeBadge" style="display:none">
+        <div class="verdict-grade" id="vGrade"></div>
+        <div class="verdict-label" id="vLabel"></div>
+      </div>
+    </div>
+  </div>
+  <div class="verdict-speech">
+    <div class="verdict-eval" id="vEval"></div>
+    <div class="verdict-conclusion" id="vConclusion"></div>
+    <div class="verdict-order" id="vOrder"></div>
+  </div>
+  <div class="verdict-status" id="vStatus"></div>
+</div>
+
+<script src="../config.js"></script>
+<script src="../cyber-bg.js"></script>
+<script>
+/* ═══════════════════════════════════════
+   DATA — CyberBG 모듈 사용
+   ═══════════════════════════════════════ */
+// 직급순: 차장 → 과장 → 대리 → 주임 → 사원 → 인턴
+const PEOPLE = [
+  { id:'p1', name:'하석진', title:'차장', dept:'미래전략기획실', img:'../img/hasukjin.png' },
+  { id:'p5', name:'곽재식', title:'과장', dept:'품질관리팀',     img:'../img/kwakjaesik.png' },
+  { id:'p2', name:'황제성', title:'대리', dept:'글로벌영업팀',   img:'../img/hwangjesung.png' },
+  { id:'p3', name:'츠키',   title:'주임', dept:'인사팀',         img:'../img/tsuki.png' },
+  { id:'p6', name:'가온',   title:'사원', dept:'홍보마케팅팀',   img:'../img/gaon.png' },
+  { id:'p4', name:'허성범', title:'인턴', dept:'인사팀',         img:'../img/heosung.png' },
+];
+
+const { GRADES, GC, DK, DL, RANK } = CyberBG;
+const GL = { S:'최적', A:'안정', B:'양호', C:'보류', D:'주의', F:'해고 위기' };
+
+const SCORES = CONFIG.FINAL_SCORES || CONFIG.MID_SCORES;
+const FINAL_GRADES = CONFIG.FINAL_GRADES || {};
+const FIRED = CONFIG.FINAL_FIRED || [];
+const RETAINED = CONFIG.FINAL_RETAINED || [];
+const VERDICTS = CONFIG.FINAL_VERDICTS || {};
+
+// 사이버펑크 대기화면 초기화 (레이더 차트 + 설문 + 게이지 바 포함)
+CyberBG.init({
+  scores: SCORES,
+  people: PEOPLE,
+  phase: 'final',
+});
+
+/* ═══════════════════════════════════════
+   VERDICT SYSTEM
+   숫자키 1~6 → 사람 선택 (발표 순서)
+   Space → 최종 통보 연출
+   ═══════════════════════════════════════ */
+// 발표 순서: config에서 가져옴 (FIRED 먼저, RETAINED 나중)
+// 직급순 발표 (config에서 가져옴, 없으면 해고→고용 순)
+const VERDICT_ORDER = CONFIG.FINAL_ORDER || [...FIRED, ...RETAINED];
+let verdictIdx = -1;
+let verdictBusy = false;
+let verdictDone = new Set();
+
+function selectVerdict(num) {
+  if (verdictBusy) return;
+  const idx = num - 1;
+  if (idx < 0 || idx >= VERDICT_ORDER.length) return;
+  verdictIdx = idx;
+  // Brief flash on computing hub
+  document.getElementById('progressLabel').textContent = `TARGET LOCKED: ${PEOPLE.find(p=>p.id===VERDICT_ORDER[idx])?.name || '???'}`;
+}
+
+function executeVerdict() {
+  if (verdictIdx < 0 || verdictBusy) return;
+  const pid = VERDICT_ORDER[verdictIdx];
+  if (verdictDone.has(pid)) return;
+  verdictBusy = true;
+
+  const person = PEOPLE.find(p => p.id === pid);
+  const grade = FINAL_GRADES[pid] || 'C';
+  const gc = GC[grade];
+  const isFired = FIRED.includes(pid);
+  const v = VERDICTS[pid] || {};
+
+  const overlay = document.getElementById('verdictOverlay');
+
+  // Reset all
+  document.getElementById('vGradeBadge').style.display = 'none';
+  document.getElementById('vEval').classList.remove('show');
+  document.getElementById('vConclusion').classList.remove('show');
+  document.getElementById('vOrder').classList.remove('show');
+  document.getElementById('vStatus').classList.remove('show');
+  document.getElementById('vEval').textContent = '';
+  document.getElementById('vConclusion').textContent = '';
+  document.getElementById('vOrder').textContent = '';
+  document.getElementById('vStatus').textContent = '';
+
+  // Show person
+  document.getElementById('vPhoto').src = person.img;
+  document.getElementById('vPhoto').style.borderColor = 'rgba(0,240,255,0.3)';
+  document.getElementById('vName').textContent = person.name;
+  document.getElementById('vName').style.color = '#e0e0e0';
+  document.getElementById('vDept').textContent = `${person.dept} ${person.title}`;
+  overlay.classList.add('show');
+
+  // Phase 1 (1.5s): 평가문
+  setTimeout(() => {
+    document.getElementById('vEval').textContent = v.evaluation || '';
+    document.getElementById('vEval').classList.add('show');
+    // TTS: 평가문
+    tryTTS(v.evaluation || '');
+  }, 1500);
+
+  // Phase 2 (5s): 등급 + 결론
+  setTimeout(() => {
+    // Grade badge
+    const badge = document.getElementById('vGradeBadge');
+    badge.style.display = 'flex';
+    document.getElementById('vGrade').style.color = gc;
+    document.getElementById('vGrade').textContent = grade;
+    document.getElementById('vLabel').style.color = gc;
+    document.getElementById('vLabel').textContent = `${grade}등급 — ${GL[grade]}`;
+
+    // Photo glow
+    document.getElementById('vPhoto').style.borderColor = gc;
+    document.getElementById('vName').style.color = gc;
+
+    // Conclusion
+    const concEl = document.getElementById('vConclusion');
+    concEl.textContent = v.conclusion || '';
+    concEl.style.color = isFired ? '#ff2d2d' : '#59d28f';
+    concEl.classList.add('show');
+  }, 5000);
+
+  // Phase 3 (7s): 명령 + 상태
+  setTimeout(() => {
+    document.getElementById('vOrder').textContent = v.order || '';
+    document.getElementById('vOrder').classList.add('show');
+
+    const status = document.getElementById('vStatus');
+    status.style.color = isFired ? '#ff2d2d' : '#59d28f';
+    status.textContent = isFired ? '── 해 고 ──' : '── 고용 유지 ──';
+    status.classList.add('show');
+
+    verdictDone.add(pid);
+    verdictBusy = false;
+  }, 7000);
+}
+
+function closeVerdict() {
+  document.getElementById('verdictOverlay').classList.remove('show');
+}
+
+/* ═══════════════════════════════════════
+   TTS — team_agent_vis 서버 연동
+   ═══════════════════════════════════════ */
+async function tryTTS(text) {
+  // 먼저 team_agent_vis 서버 시도
+  try {
+    const res = await fetch((CONFIG.TEAM_VIZ_URL || 'http://localhost:3000') + '/api/executor/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text, provider: 'openai', voiceId: 'onyx',
+        filter: 'executor', production: 'courtdrama',
+        speakingRate: 0.82, flattenIntonation: true,
+      }),
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+      return;
+    }
+  } catch {}
+
+  // 폴백: 브라우저 TTS
+  if (window.speechSynthesis) {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR'; u.rate = 0.8;
+    speechSynthesis.speak(u);
+  }
+}
+
+/* ═══════════════════════════════════════
+   KEYBOARD
+   ═══════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key >= '1' && e.key <= '6') { e.preventDefault(); selectVerdict(parseInt(e.key)); }
+  if (e.key === ' ') { e.preventDefault(); executeVerdict(); }
+  if (e.key === 'Escape') { e.preventDefault(); closeVerdict(); }
+});
+</script>
+</body>
+</html>

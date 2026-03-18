@@ -3,400 +3,357 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>할루시네이션: 해고전쟁 — 중간 평가</title>
+<title>할루시네이션: 해고전쟁 — 중간평가</title>
+<link rel="stylesheet" href="../common.css">
+<link rel="stylesheet" href="../cyber-bg.css">
 <style>
-:root {
-  --bg: #05090d; --surface: #0f1923; --border: rgba(255,255,255,0.08);
-  --text: #e8eaed; --muted: rgba(255,255,255,0.4); --accent: #6366f1;
-  --gold: #ffd700; --green: #59d28f; --cyan: #4ed9e8; --orange: #f3b63f; --red-light: #ff6b3d; --red: #ff2d2d;
-}
+:root { --border: rgba(255,255,255,0.08); --text: #e8eaed; --muted: rgba(255,255,255,0.4); --accent: #6366f1; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; height: 100vh; overflow: hidden; }
+body { background: #0a0a12; color: var(--text); font-family: 'Noto Sans KR', -apple-system, sans-serif; height: 100vh; overflow: hidden; cursor: none; }
+/* 대기화면 ↔ 평가화면 전환 */
+.cyber-standby { transition: opacity 0.6s; }
+.cyber-standby.hidden { opacity: 0; pointer-events: none; position: absolute; }
+.app { display: none; } /* 숫자키 누를 때까지 숨김 */
+.app.active { display: flex; height: 100vh; width: 100vw; padding-top: 120px; }
 
-.app { display: flex; flex-direction: column; height: 100vh; }
+.app { display: flex; height: 100vh; width: 100vw; padding-top: 120px; }
 
-/* Header */
-.header { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.header-left img { height: 24px; }
-.header-title { font-size: 1rem; font-weight: 800; }
-.header-sub { font-size: 0.7rem; color: var(--muted); }
-.header-right { display: flex; align-items: center; gap: 8px; }
-.header-right img { height: 26px; filter: brightness(1.3); }
+/* ── Left: Person ── */
+.left-panel { flex: 0 0 40%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2vh 2vw; }
+.person-photo {
+  width: clamp(180px, 22vw, 280px); height: clamp(180px, 22vw, 280px);
+  border-radius: 50%; object-fit: cover; border: 6px solid var(--border);
+  transition: all 0.6s; margin-bottom: 2.5vh;
+}
+.person-photo.locked { box-shadow: 0 0 60px var(--glow); }
+.placeholder-circle {
+  width: clamp(180px, 22vw, 280px); height: clamp(180px, 22vw, 280px);
+  border-radius: 50%; border: 6px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(5rem, 10vw, 8rem); color: var(--muted); font-weight: 900;
+  background: rgba(255,255,255,0.03); margin-bottom: 2.5vh;
+}
+.person-name { font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 900; text-align: center; min-height: 1.2em; }
+.person-dept { font-size: clamp(1.1rem, 1.6vw, 1.4rem); color: var(--muted); text-align: center; min-height: 1.2em; }
 
-/* Controls */
-.controls { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-.btn { padding: 6px 18px; border: 2px solid var(--accent); background: transparent; color: var(--accent); border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-.btn:hover { background: rgba(99,102,241,0.15); }
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-gold { border-color: var(--gold); color: var(--gold); }
-.btn-gold:hover { background: rgba(255,215,0,0.1); }
-.btn-red { border-color: var(--red); color: var(--red); }
-.btn-red:hover { background: rgba(255,45,45,0.1); }
-.btn:disabled { opacity: 0.3; cursor: default; }
-.status { font-size: 0.75rem; color: var(--muted); }
+/* ── Right: Grade + Best/Worst ── */
+.right-panel { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2vh 3vw; border-left: 1px solid var(--border); }
 
-/* Main */
-.main { flex: 1; display: flex; align-items: center; justify-content: center; }
+.announce-grade {
+  font-size: clamp(3.5rem, 7vw, 6rem); font-weight: 900; text-align: center;
+  margin-bottom: 3vh; letter-spacing: 0.05em;
+}
 
-/* Script view */
-.script-view { text-align: center; max-width: 700px; padding: 2rem; }
-.script-line { font-size: 1.15rem; color: rgba(255,255,255,0.8); line-height: 2; margin-bottom: 0.5rem; opacity: 0; transform: translateY(10px); transition: all 0.6s; }
-.script-line.visible { opacity: 1; transform: translateY(0); }
-.script-line.highlight { color: var(--gold); font-weight: 700; font-size: 1.3rem; }
-.script-line.danger { color: var(--red); font-weight: 700; font-size: 1.3rem; }
+.result-badge {
+  font-size: clamp(1.3rem, 2.2vw, 2rem); font-weight: 700; text-align: center;
+  margin-bottom: 3vh; opacity: 0; transition: opacity 0.6s;
+}
+.result-badge.show { opacity: 1; }
 
-/* Reveal view */
-.reveal-view { text-align: center; animation: revealIn 0.8s ease-out; width: 100%; max-width: 600px; }
-@keyframes revealIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+/* Best/Worst cards */
+.highlights { display: flex; gap: 3vw; opacity: 0; transition: opacity 0.6s; }
+.highlights.show { opacity: 1; }
+.hl-card { padding: 2.5vh 2.5vw; border-radius: 12px; text-align: center; min-width: clamp(180px, 16vw, 240px); }
+.hl-card.best { background: rgba(89,210,143,0.08); border: 2px solid rgba(89,210,143,0.25); }
+.hl-card.worst { background: rgba(255,45,45,0.08); border: 2px solid rgba(255,45,45,0.25); }
+.hl-tag { font-size: clamp(0.9rem, 1.1vw, 1.05rem); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1vh; }
+.hl-card.best .hl-tag { color: #59d28f; }
+.hl-card.worst .hl-tag { color: #ff2d2d; }
+.hl-dim { font-size: clamp(1rem, 1.4vw, 1.3rem); color: var(--muted); margin-bottom: 0.8vh; }
+.hl-grade { font-size: clamp(3rem, 5vw, 4.5rem); font-weight: 900; }
 
-.reveal-label { font-size: 1rem; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 1.5rem; }
-.reveal-label.s-label { color: var(--gold); }
-.reveal-label.f-label { color: var(--red); }
+/* Summary */
+.summary-text {
+  font-size: clamp(1rem, 1.4vw, 1.2rem); color: rgba(255,255,255,0.6);
+  text-align: center; max-width: 500px; line-height: 1.7;
+  margin-top: 2vh; opacity: 0; transition: opacity 0.6s;
+}
+.summary-text.show { opacity: 1; }
 
-.reveal-photo { width: 180px; height: 180px; border-radius: 50%; object-fit: cover; margin: 0 auto 1.5rem; display: block; }
-.reveal-photo.s-photo { border: 5px solid var(--gold); box-shadow: 0 0 40px rgba(255,215,0,0.3); }
-.reveal-photo.f-photo { border: 5px solid var(--red); box-shadow: 0 0 40px rgba(255,45,45,0.3); }
+/* idle-screen은 더 이상 사용하지 않음 — 사이버펑크 대기화면으로 대체 */
 
-.reveal-name { font-size: 2.5rem; font-weight: 900; margin-bottom: 0.3rem; }
-.reveal-dept { font-size: 1rem; color: var(--muted); margin-bottom: 0.5rem; }
+/* Data status */
+.data-status { position: fixed; bottom: 12px; right: 24px; font-size: 0.8rem; color: var(--muted); opacity: 0.5; }
 
-.reveal-grade { font-size: 8rem; font-weight: 900; line-height: 1; margin: 0.5rem 0; }
-.reveal-grade-label { font-size: 1.3rem; font-weight: 700; }
-
-.reveal-change { font-size: 1.1rem; margin: 1rem 0; }
-.change-up { color: var(--green); }
-.change-down { color: var(--red); }
-.change-same { color: var(--muted); }
-
-/* Radar */
-.reveal-radar { display: flex; justify-content: center; margin: 1rem 0; }
-
-.reveal-keywords { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 1rem 0; }
-.keyword { font-size: 0.85rem; padding: 4px 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted); }
-
-.reveal-summary { font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.7; max-width: 450px; margin: 0 auto; }
-
-/* Grade spinning */
-.grade-spinning { font-size: 5rem; font-weight: 900; animation: gradeShake 0.08s infinite; color: var(--gold); }
-@keyframes gradeShake { 0% { transform: translateY(-3px); } 50% { transform: translateY(3px); } }
-@keyframes gradeLock { 0% { transform: scale(2.5); opacity: 0; } 40% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
-
-/* Settings */
-.settings { position: fixed; bottom: 10px; right: 10px; font-size: 0.7rem; color: var(--muted); }
-.settings input { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; width: 280px; }
+@keyframes pop { 0%{transform:scale(2.5);opacity:0}50%{transform:scale(.9)}100%{transform:scale(1);opacity:1} }
 </style>
 </head>
-<body>
-<div class="app">
+<body class="cyber">
 
-<div class="header">
-  <div class="header-left">
+<canvas id="bgCanvas"></canvas>
+<div class="scanline"></div>
+
+<div class="top-bar">
+  <div class="top-left">
     <img src="../jtbc.png" alt="JTBC">
-    <div>
-      <div class="header-title">할루시네이션: 해고전쟁</div>
-      <div class="header-sub">ORBIT CONSULTING — 중간 평가</div>
+    <div class="top-title-wrap">
+      <div class="top-title glitch" data-text="ARCHE SYSTEM">ARCHE SYSTEM</div>
+      <div class="top-sub">ORBIT CONSULTING — 중간 평가</div>
     </div>
   </div>
-  <div class="header-right">
-    <img src="../kisti.svg" alt="KISTI">
+  <div class="top-status">
+    <div>MID-EVALUATION v1.0</div>
+    <div><span class="blink">●</span> LIVE — <span id="clock">00:00:00</span></div>
+  </div>
+  <div class="top-right"><img src="../kisti.svg" alt="KISTI"></div>
+</div>
+
+<!-- 사이버펑크 대기화면 -->
+<div class="cyber-standby" id="cyberStandby">
+  <div class="cyber-main">
+    <div class="cyber-left">
+      <div id="leftStreams"></div>
+      <div class="survey-stream" id="surveyStream"></div>
+    </div>
+    <div class="cyber-center">
+      <div class="computing-hub">
+        <div class="computing-title">MID-EVALUATION</div>
+        <canvas id="radarCanvas"></canvas>
+        <div class="computing-progress">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-label" id="progressLabel">INITIALIZING...</div>
+        </div>
+        <div class="metric-cards" id="metricCards"></div>
+      </div>
+    </div>
+    <div class="cyber-right" id="rightScores"></div>
   </div>
 </div>
 
-<div class="controls">
-  <button class="btn btn-primary" onclick="startScript()" id="btnScript">대사 시작</button>
-  <button class="btn btn-gold" onclick="revealS()" id="btnS" disabled>S등급 공개</button>
-  <button class="btn btn-red" onclick="revealF()" id="btnF" disabled>F등급 공개</button>
-  <button class="btn" onclick="showBoth()">전체 보기</button>
-  <span class="status" id="status">데이터 로딩 중...</span>
-</div>
+<!-- 평가 화면 (숫자키로 활성화) -->
+<div class="app" id="app"></div>
+<div class="data-status" id="dataStatus">기본 데이터</div>
 
-<div class="main" id="main">
-  <div class="script-view" id="scriptView" style="display:none"></div>
-  <div class="reveal-view" id="revealView" style="display:none"></div>
-</div>
-
-</div>
-
-<div class="settings">
-  Sheet ID: <input id="sheetId" placeholder="Google Sheet ID" value="">
-  <button class="btn" onclick="loadSheet()" style="padding:2px 8px;font-size:0.7rem">로드</button>
-</div>
-
+<script src="../config.js"></script>
+<script src="../cyber-bg.js"></script>
 <script>
-const GRADES = ['S','A','B','C','D','F'];
-const GRADE_COLORS = { S:'#ffd700', A:'#59d28f', B:'#4ed9e8', C:'#f3b63f', D:'#ff6b3d', F:'#ff2d2d' };
-const GRADE_LABELS = { S:'최적', A:'안정', B:'양호', C:'보류', D:'주의', F:'해고 위기' };
-const GRADE_VAL = { S:1, A:0.85, B:0.7, C:0.5, D:0.3, F:0.1 };
-
-const POSITIVE_TAGS = new Set(["정답","분석적접근","리더십","창의적발상","협력","반전","윤리적판단","직관적판단"]);
-const NEGATIVE_TAGS = new Set(["오답","흔들림","도발반응","포기"]);
-
-const PARTICIPANTS = {
-  "곽재식": { id:"p5", img:"../img/kwakjaesik.png", title:"과장", dept:"품질관리팀", preGrade:"S" },
-  "하석진": { id:"p1", img:"../img/hasukjin.png", title:"차장", dept:"미래 전략 기획실", preGrade:"A" },
-  "허성범": { id:"p4", img:"../img/heosung.png", title:"인턴", dept:"인사팀", preGrade:"B" },
-  "황제성": { id:"p2", img:"../img/hwangjesung.png", title:"대리", dept:"글로벌 영업팀", preGrade:"C" },
-  "츠키":   { id:"p3", img:"../img/tsuki.png", title:"주임", dept:"인사팀", preGrade:"D" },
-  "가온":   { id:"p6", img:"../img/gaon.png", title:"사원", dept:"홍보마케팅팀", preGrade:"F" },
-};
-
-let midResults = []; // {name, grade, posCount, negCount, total, keywords}
-let topPerson = null;
-let bottomPerson = null;
-
-// Parse CSV
-function parseCSV(csv) {
-  const lines = csv.split('\n').filter(l => l.trim());
-  if (lines.length < 2) return [];
-  return lines.slice(1).map(line => {
-    const cols = [];
-    let cur = '', inQ = false;
-    for (const ch of line) {
-      if (inQ) { if (ch === '"') inQ = false; else cur += ch; }
-      else if (ch === '"') inQ = true;
-      else if (ch === ',') { cols.push(cur.trim()); cur = ''; }
-      else cur += ch;
-    }
-    cols.push(cur.trim());
-    return { timestamp: cols[0]||'', name: cols[1]||'', scene: cols[2]||'', evalDim: cols[3]||'', tags: (cols[4]||'').split(/[,;]/).map(t=>t.trim()).filter(Boolean), desc: cols[5]||'' };
-  });
-}
-
-function computeGrade(posCount, negCount) {
-  const total = posCount + negCount;
-  if (total === 0) return 'C';
-  const ratio = posCount / total;
-  if (ratio >= 0.9) return 'S';
-  if (ratio >= 0.75) return 'A';
-  if (ratio >= 0.6) return 'B';
-  if (ratio >= 0.4) return 'C';
-  if (ratio >= 0.2) return 'D';
-  return 'F';
-}
-
-function analyzeSheet(rows) {
-  const byName = {};
-  for (const row of rows) {
-    if (!row.name || !PARTICIPANTS[row.name]) continue;
-    if (!byName[row.name]) byName[row.name] = { pos: 0, neg: 0, total: 0, tags: {} };
-    byName[row.name].total++;
-    for (const tag of row.tags) {
-      if (POSITIVE_TAGS.has(tag)) byName[row.name].pos++;
-      if (NEGATIVE_TAGS.has(tag)) byName[row.name].neg++;
-      byName[row.name].tags[tag] = (byName[row.name].tags[tag]||0) + 1;
-    }
-  }
-
-  const results = Object.entries(PARTICIPANTS).map(([name, info]) => {
-    const d = byName[name] || { pos: 0, neg: 0, total: 0, tags: {} };
-    const grade = computeGrade(d.pos, d.neg);
-    const topTags = Object.entries(d.tags).sort((a,b) => b[1]-a[1]).slice(0,3).map(([t]) => '#'+t);
-    return { name, ...info, midGrade: grade, posCount: d.pos, negCount: d.neg, total: d.total, keywords: topTags };
-  });
-
-  // Sort by grade (S=0 best, F=5 worst)
-  results.sort((a,b) => GRADES.indexOf(a.midGrade) - GRADES.indexOf(b.midGrade));
-  midResults = results;
-  topPerson = results[0];
-  bottomPerson = results[results.length - 1];
-
-  document.getElementById('status').textContent = `로드 완료: ${rows.length}건, S=${topPerson.name}, F=${bottomPerson.name}`;
-  document.getElementById('btnScript').disabled = false;
-  document.getElementById('btnS').disabled = false;
-  document.getElementById('btnF').disabled = false;
-}
-
-async function loadSheet() {
-  const sheetId = document.getElementById('sheetId').value.trim();
-  if (!sheetId) { alert('Sheet ID를 입력하세요'); return; }
-  document.getElementById('status').textContent = '시트 로딩 중...';
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=0`;
-    const res = await fetch(url);
-    const csv = await res.text();
-    const rows = parseCSV(csv);
-    analyzeSheet(rows);
-  } catch (e) {
-    document.getElementById('status').textContent = '로드 실패: ' + e.message;
-  }
-}
-
-// Try loading sample data
-async function loadSample() {
-  try {
-    const res = await fetch('../data.json');
-    const data = await res.json();
-    // Use pre-eval data as fallback for mid-eval demo
-    midResults = data.evaluations.map(ev => ({
-      name: ev.name, ...PARTICIPANTS[ev.name],
-      midGrade: ev.grade, posCount: 0, negCount: 0, total: 0,
-      keywords: ev.keywords
-    }));
-    midResults.sort((a,b) => GRADES.indexOf(a.midGrade) - GRADES.indexOf(b.midGrade));
-    topPerson = midResults[0];
-    bottomPerson = midResults[midResults.length - 1];
-    document.getElementById('status').textContent = '샘플 데이터 (시트 연결 시 실시간 반영)';
-    document.getElementById('btnScript').disabled = false;
-    document.getElementById('btnS').disabled = false;
-    document.getElementById('btnF').disabled = false;
-  } catch {}
-}
-
-// Script animation
-async function startScript() {
-  const scriptView = document.getElementById('scriptView');
-  const revealView = document.getElementById('revealView');
-  scriptView.style.display = 'block';
-  revealView.style.display = 'none';
-
-  const lines = [
-    { text: "안녕하십니까.", cls: "" },
-    { text: "아르케를 돕는 집행관, 김영진입니다.", cls: "" },
-    { text: "", cls: "" },
-    { text: "현재 여러분의 모든 업무 성과는", cls: "" },
-    { text: "아르케에 의해 실시간으로 감시되고 있습니다.", cls: "highlight" },
-    { text: "", cls: "" },
-    { text: "아르케는 오직 데이터로만 여러분을 평가합니다.", cls: "" },
-    { text: "누군가는 '고용 유지'에 가까워지고,", cls: "" },
-    { text: "누군가는 '해고'에 직면하고 있습니다.", cls: "danger" },
-    { text: "", cls: "" },
-    { text: "그럼 아르케가 책정한", cls: "" },
-    { text: "여러분의 중간 평가.", cls: "highlight" },
-    { text: "최고 등급과 최저 등급을 공개하겠습니다.", cls: "" },
-  ];
-
-  scriptView.innerHTML = lines.map((l, i) =>
-    l.text ? `<div class="script-line ${l.cls}" id="line-${i}">${l.text}</div>` : `<div class="script-line" id="line-${i}" style="height:1rem"></div>`
-  ).join('');
-
-  for (let i = 0; i < lines.length; i++) {
-    await new Promise(r => setTimeout(r, 800));
-    document.getElementById('line-' + i).classList.add('visible');
-
-    // TTS for non-empty lines
-    if (lines[i].text && window.speechSynthesis) {
-      const u = new SpeechSynthesisUtterance(lines[i].text);
-      u.lang = 'ko-KR'; u.rate = 0.8;
-      speechSynthesis.speak(u);
-    }
-  }
-}
-
-function revealPerson(person, type) {
-  const scriptView = document.getElementById('scriptView');
-  const revealView = document.getElementById('revealView');
-  scriptView.style.display = 'none';
-  revealView.style.display = 'block';
-
-  const gc = GRADE_COLORS[person.midGrade];
-  const isS = type === 's';
-  const preIdx = GRADES.indexOf(person.preGrade);
-  const midIdx = GRADES.indexOf(person.midGrade);
-  const changeText = midIdx < preIdx ? '↑ 상승' : midIdx > preIdx ? '↓ 하락' : '→ 유지';
-  const changeCls = midIdx < preIdx ? 'change-up' : midIdx > preIdx ? 'change-down' : 'change-same';
-
-  revealView.innerHTML = `
-    <div class="reveal-label ${isS ? 's-label' : 'f-label'}">
-      ${isS ? '현재 고용 유지 확률이 가장 높은' : '현재 해고 확률이 가장 높은'}
-    </div>
-    <img class="reveal-photo ${isS ? 's-photo' : 'f-photo'}" src="${person.img}" alt="${person.name}">
-    <div class="reveal-name">${person.name}</div>
-    <div class="reveal-dept">${person.dept} ${person.title}</div>
-    <div id="gradeArea" style="min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:1rem 0">
-      <div class="grade-spinning">?</div>
-    </div>
-    <div class="reveal-change" style="opacity:0" id="changeArea">
-      사전 ${person.preGrade} → 중간 <span class="${changeCls}">${changeText}</span>
-    </div>
-    <div class="reveal-keywords" style="opacity:0" id="kwArea">
-      ${person.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
-    </div>
-  `;
-
-  // Roulette
-  let spinIdx = 0;
-  const gradeArea = document.getElementById('gradeArea');
-  const spinInterval = setInterval(() => {
-    gradeArea.innerHTML = `<div class="grade-spinning">${GRADES[spinIdx % 6]}</div>`;
-    spinIdx++;
-  }, 80);
-
-  setTimeout(() => {
-    clearInterval(spinInterval);
-    let slowIdx = 0;
-    const slowInterval = setInterval(() => {
-      const grades = [...GRADES, ...GRADES, person.midGrade];
-      gradeArea.innerHTML = `<div class="grade-spinning" style="animation-duration:${0.15+slowIdx*0.03}s">${grades[slowIdx % grades.length]}</div>`;
-      slowIdx++;
-      if (slowIdx > 8) {
-        clearInterval(slowInterval);
-        gradeArea.innerHTML = `
-          <div style="font-size:8rem;font-weight:900;color:${gc};text-shadow:0 0 60px ${gc};animation:gradeLock 0.6s ease-out">${person.midGrade}</div>
-          <div style="font-size:1.3rem;font-weight:700;color:${gc}">${person.midGrade}등급 — ${GRADE_LABELS[person.midGrade]}</div>
-        `;
-        document.getElementById('changeArea').style.opacity = '1';
-        document.getElementById('kwArea').style.opacity = '1';
-
-        if (window.speechSynthesis) {
-          const msg = isS
-            ? `현재 고용 유지 확률이 가장 높은 S등급. ${person.name}입니다.`
-            : `현재 해고 확률이 가장 높은 F등급. ${person.name}입니다.`;
-          const u = new SpeechSynthesisUtterance(msg);
-          u.lang = 'ko-KR'; u.rate = 0.8;
-          speechSynthesis.speak(u);
-        }
-      }
-    }, 180);
-  }, 1500);
-}
-
-function revealS() { if (topPerson) revealPerson(topPerson, 's'); }
-function revealF() { if (bottomPerson) revealPerson(bottomPerson, 'f'); }
-
-function showBoth() {
-  const revealView = document.getElementById('revealView');
-  const scriptView = document.getElementById('scriptView');
-  scriptView.style.display = 'none';
-  revealView.style.display = 'block';
-  if (!topPerson || !bottomPerson) return;
-
-  revealView.innerHTML = `
-    <div style="display:flex;gap:3rem;align-items:flex-start;justify-content:center;flex-wrap:wrap">
-      <div style="text-align:center">
-        <div class="reveal-label s-label">S등급 — 고용 유지</div>
-        <img class="reveal-photo s-photo" src="${topPerson.img}" style="width:140px;height:140px">
-        <div style="font-size:1.8rem;font-weight:900;margin:0.5rem 0">${topPerson.name}</div>
-        <div style="color:var(--muted)">${topPerson.dept} ${topPerson.title}</div>
-        <div style="font-size:5rem;font-weight:900;color:${GRADE_COLORS[topPerson.midGrade]};text-shadow:0 0 40px ${GRADE_COLORS[topPerson.midGrade]}">${topPerson.midGrade}</div>
-      </div>
-      <div style="font-size:2rem;color:var(--muted);align-self:center">VS</div>
-      <div style="text-align:center">
-        <div class="reveal-label f-label">F등급 — 해고 위기</div>
-        <img class="reveal-photo f-photo" src="${bottomPerson.img}" style="width:140px;height:140px">
-        <div style="font-size:1.8rem;font-weight:900;margin:0.5rem 0">${bottomPerson.name}</div>
-        <div style="color:var(--muted)">${bottomPerson.dept} ${bottomPerson.title}</div>
-        <div style="font-size:5rem;font-weight:900;color:${GRADE_COLORS[bottomPerson.midGrade]};text-shadow:0 0 40px ${GRADE_COLORS[bottomPerson.midGrade]}">${bottomPerson.midGrade}</div>
-      </div>
-    </div>
-  `;
-}
-
-// Keyboard
-document.addEventListener('keydown', (e) => {
-  if (e.key === '1') startScript();
-  if (e.key === '2') revealS();
-  if (e.key === '3') revealF();
-  if (e.key === '4') showBoth();
+/* 대기화면 초기화 */
+// 직급순: 차장 → 과장 → 대리 → 주임 → 사원 → 인턴
+const _people = [
+  { id:'p1', name:'하석진', title:'차장', dept:'미래전략기획실', img:'../img/hasukjin.png' },
+  { id:'p5', name:'곽재식', title:'과장', dept:'품질관리팀',     img:'../img/kwakjaesik.png' },
+  { id:'p2', name:'황제성', title:'대리', dept:'글로벌영업팀',   img:'../img/hwangjesung.png' },
+  { id:'p3', name:'츠키',   title:'주임', dept:'인사팀',         img:'../img/tsuki.png' },
+  { id:'p6', name:'가온',   title:'사원', dept:'홍보마케팅팀',   img:'../img/gaon.png' },
+  { id:'p4', name:'허성범', title:'인턴', dept:'인사팀',         img:'../img/heosung.png' },
+];
+CyberBG.init({
+  scores: CONFIG.MID_SCORES || {},
+  people: _people,
+  phase: 'mid',
 });
 
-// Init
-loadSample();
+let standbyActive = true;
+function exitStandby() {
+  if (!standbyActive) return;
+  standbyActive = false;
+  document.getElementById('cyberStandby').classList.add('hidden');
+  document.getElementById('app').classList.add('active');
+}
+</script>
+<script>
+/* ═══════════════════════════════════════
+   config.js → 점수 & 대상자 로드
+   ═══════════════════════════════════════ */
+const PEOPLE = [
+  { id:'p6', name:'가온',   title:'사원', dept:'홍보마케팅팀',     img:'../img/gaon.png' },
+  { id:'p3', name:'츠키',   title:'주임', dept:'인사팀',           img:'../img/tsuki.png' },
+  { id:'p2', name:'황제성', title:'대리', dept:'글로벌 영업팀',    img:'../img/hwangjesung.png' },
+  { id:'p4', name:'허성범', title:'인턴', dept:'인사팀',           img:'../img/heosung.png' },
+  { id:'p1', name:'하석진', title:'차장', dept:'미래 전략 기획실', img:'../img/hasukjin.png' },
+  { id:'p5', name:'곽재식', title:'과장', dept:'품질관리팀',       img:'../img/kwakjaesik.png' }
+];
 
-// Auto-load sheet from URL param
-const urlParams = new URLSearchParams(window.location.search);
-const sid = urlParams.get('sheet');
-if (sid) { document.getElementById('sheetId').value = sid; loadSheet(); }
+const GRADES = ['S','A','B','C','D','F'];
+const GC = { S:'#ffd700', A:'#59d28f', B:'#4ed9e8', C:'#f3b63f', D:'#ff6b3d', F:'#ff2d2d' };
+const GL = { S:'최적', A:'안정', B:'양호', C:'보류', D:'주의', F:'해고 위기' };
+const DK = ['contribution','competency','collaboration','crisis','intuition','ethics','aiVerification'];
+const DL = { contribution:'성과 기여도', competency:'역량 평가', collaboration:'협업 태도', crisis:'위기 대응력', intuition:'인간의 직관력', ethics:'윤리적 책임감', aiVerification:'AI 검증력' };
+const RANK = { S:6, A:5, B:4, C:3, D:2, F:1 };
+
+// config.js에서 점수 로드
+const SCORES = CONFIG.MID_SCORES;
+
+// F/S 대상자 결정
+let MID_F_ID, MID_S_ID;
+if (CONFIG.MID_F_ID === 'auto' || CONFIG.MID_S_ID === 'auto') {
+  let minScore = Infinity, maxScore = -Infinity, minId = '', maxId = '';
+  for (const pid of Object.keys(SCORES)) {
+    const total = DK.reduce((s, k) => s + (RANK[SCORES[pid][k]] || 0), 0);
+    if (total < minScore) { minScore = total; minId = pid; }
+    if (total > maxScore) { maxScore = total; maxId = pid; }
+  }
+  MID_F_ID = CONFIG.MID_F_ID === 'auto' ? minId : CONFIG.MID_F_ID;
+  MID_S_ID = CONFIG.MID_S_ID === 'auto' ? maxId : CONFIG.MID_S_ID;
+  document.getElementById('dataStatus').textContent = `자동: F=${PEOPLE.find(p=>p.id===MID_F_ID)?.name} / S=${PEOPLE.find(p=>p.id===MID_S_ID)?.name}`;
+} else {
+  MID_F_ID = CONFIG.MID_F_ID;
+  MID_S_ID = CONFIG.MID_S_ID;
+  document.getElementById('dataStatus').textContent = `수동: F=${PEOPLE.find(p=>p.id===MID_F_ID)?.name} / S=${PEOPLE.find(p=>p.id===MID_S_ID)?.name}`;
+}
+
+/* ═══════════════════════════════════════
+   BEST / WORST 계산
+   ═══════════════════════════════════════ */
+function getBestWorst(pid) {
+  const sc = SCORES[pid];
+  if (!sc) return { best: DK[0], worst: DK[0], bestGrade: 'C', worstGrade: 'C' };
+  let best = null, worst = null, bestR = -1, worstR = 99;
+  for (const k of DK) {
+    const r = RANK[sc[k]] || 0;
+    if (r > bestR) { bestR = r; best = k; }
+    if (r < worstR) { worstR = r; worst = k; }
+  }
+  return { best, worst, bestGrade: sc[best], worstGrade: sc[worst] };
+}
+
+/* ═══════════════════════════════════════
+   UI
+   ═══════════════════════════════════════ */
+let mode = null; // 'F' or 'S'
+let spinning = false;
+let doneSet = new Set();
+
+function selectMode(m) {
+  if (spinning || doneSet.has(m)) return;
+  mode = m;
+  const gc = GC[m];
+
+  document.getElementById('app').innerHTML = `
+    <div class="left-panel">
+      <div class="placeholder-circle" id="photoArea">?</div>
+      <div class="person-name" id="rName" style="color:var(--muted)">? ? ?</div>
+      <div class="person-dept" id="rDept">&nbsp;</div>
+    </div>
+    <div class="right-panel">
+      <div class="announce-grade" style="color:${gc}">${m}등급 — ${GL[m]}</div>
+      <div class="result-badge" id="rResult" style="color:${gc}">대상자 확정</div>
+      <div class="highlights" id="hl">
+        <div class="hl-card best">
+          <div class="hl-tag">BEST</div>
+          <div class="hl-dim" id="hlBestDim">—</div>
+          <div class="hl-grade" id="hlBestG" style="color:var(--muted)">—</div>
+        </div>
+        <div class="hl-card worst">
+          <div class="hl-tag">WORST</div>
+          <div class="hl-dim" id="hlWorstDim">—</div>
+          <div class="hl-grade" id="hlWorstG" style="color:var(--muted)">—</div>
+        </div>
+      </div>
+      <div class="summary-text" id="rSummary"></div>
+    </div>
+  `;
+}
+
+function spinPeople() {
+  if (!mode || spinning || doneSet.has(mode)) return;
+  spinning = true;
+
+  const gc = GC[mode];
+  const targetId = mode === 'F' ? MID_F_ID : MID_S_ID;
+  const target = PEOPLE.find(p => p.id === targetId);
+  const bw = getBestWorst(targetId);
+
+  const photoArea = document.getElementById('photoArea');
+  const nameEl = document.getElementById('rName');
+  const deptEl = document.getElementById('rDept');
+
+  // ── Phase 1: Fast spin (photos + names) ──
+  let si = Math.floor(Math.random() * PEOPLE.length);
+  const fast = setInterval(() => {
+    const p = PEOPLE[si % PEOPLE.length];
+    // Replace placeholder with actual photo element
+    photoArea.outerHTML = `<img class="person-photo" id="photoArea" src="${p.img}">`;
+    nameEl.textContent = p.name;
+    nameEl.style.color = 'var(--text)';
+    deptEl.textContent = `${p.dept} ${p.title}`;
+    si++;
+  }, 110);
+
+  // ── Phase 2: Slow down ──
+  setTimeout(() => {
+    clearInterval(fast);
+    // Build pool ending with target, cycle through ~15 more
+    const others = PEOPLE.filter(p => p.id !== targetId);
+    const pool = [];
+    for (let i = 0; i < 3; i++) pool.push(...others.sort(() => Math.random() - 0.5));
+    pool.push(target);
+
+    let pi = 0;
+    const slow = setInterval(() => {
+      const p = pool[pi];
+      const el = document.getElementById('photoArea');
+      if (el.tagName === 'DIV') {
+        el.outerHTML = `<img class="person-photo" id="photoArea" src="${p.img}">`;
+      } else {
+        el.src = p.img;
+      }
+      nameEl.textContent = p.name;
+      deptEl.textContent = `${p.dept} ${p.title}`;
+      pi++;
+
+      if (pi >= pool.length) {
+        clearInterval(slow);
+        // ── Lock on target ──
+        const photo = document.getElementById('photoArea');
+        photo.src = target.img;
+        photo.classList.add('locked');
+        photo.style.borderColor = gc;
+        photo.style.setProperty('--glow', gc + '50');
+        nameEl.textContent = target.name;
+        nameEl.style.animation = 'pop 0.5s cubic-bezier(0.22,1,0.36,1)';
+        deptEl.textContent = `${target.dept} ${target.title}`;
+
+        // Show result badge
+        setTimeout(() => {
+          document.getElementById('rResult')?.classList.add('show');
+        }, 300);
+
+        // Show best/worst
+        setTimeout(() => {
+          const hl = document.getElementById('hl');
+          document.getElementById('hlBestDim').textContent = DL[bw.best];
+          document.getElementById('hlBestG').textContent = bw.bestGrade;
+          document.getElementById('hlBestG').style.color = GC[bw.bestGrade];
+          document.getElementById('hlWorstDim').textContent = DL[bw.worst];
+          document.getElementById('hlWorstG').textContent = bw.worstGrade;
+          document.getElementById('hlWorstG').style.color = GC[bw.worstGrade];
+          hl?.classList.add('show');
+        }, 700);
+
+        // Summary
+        setTimeout(() => {
+          const sm = document.getElementById('rSummary');
+          const reason = mode === 'F'
+            ? `${target.name} ${target.title}: 중간 평가 기준 ${DL[bw.worst]} 최하위 (${bw.worstGrade}등급). 해고 위기 대상자로 지정.`
+            : `${target.name} ${target.title}: 중간 평가 기준 ${DL[bw.best]} 최고 (${bw.bestGrade}등급). 최적 인재로 확정.`;
+          sm.textContent = reason;
+          sm.classList.add('show');
+
+          doneSet.add(mode);
+          spinning = false;
+
+          if (window.speechSynthesis) {
+            const u = new SpeechSynthesisUtterance(
+              `중간 평가. ${target.dept} ${target.title} ${target.name}. ${mode}등급, ${GL[mode]}.`
+            );
+            u.lang = 'ko-KR'; u.rate = 0.85;
+            speechSynthesis.speak(u);
+          }
+        }, 1200);
+      }
+    }, 180 + pi * 12);
+  }, 2200);
+}
+
+/* ── Keyboard ── */
+document.addEventListener('keydown', e => {
+  if (e.key === '1') { e.preventDefault(); exitStandby(); selectMode('F'); }
+  if (e.key === '2') { e.preventDefault(); exitStandby(); selectMode('S'); }
+  if (e.key === ' ') { e.preventDefault(); spinPeople(); }
+});
+
+/* ── Init complete ── */
 </script>
 </body>
 </html>
