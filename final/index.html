@@ -300,8 +300,12 @@ async function tryTTS(text) {
 /* ═══════════════════════════════════════
    KEYBOARD
    ═══════════════════════════════════════ */
+// QWERTY → 직급순 매핑 (Q=차장, W=과장, E=대리, R=주임, T=사원, Y=인턴)
+const QWERTY_MAP = { q:1, w:2, e:3, r:4, t:5, y:6 };
+
 document.addEventListener('keydown', e => {
   if (e.key >= '1' && e.key <= '6') { e.preventDefault(); selectVerdict(parseInt(e.key)); }
+  if (QWERTY_MAP[e.key.toLowerCase()]) { e.preventDefault(); selectVerdict(QWERTY_MAP[e.key.toLowerCase()]); }
   if (e.key === ' ') { e.preventDefault(); executeVerdict(); }
   if (e.key === 'Escape') { e.preventDefault(); closeVerdict(); }
 });
