@@ -98,10 +98,15 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
 
   <div style="margin-top:3vh;border-top:1px solid rgba(255,255,255,0.06);padding-top:3vh;width:100%;display:flex;justify-content:center">
     <div class="cards">
-      <a class="card accent-magenta" href="javascript:void(0)" onclick="openDebate()" id="debateCard">
+      <a class="card accent-magenta" href="replay/index.html">
         <div class="card-icon" style="font-size:2rem">AI</div>
         <div class="card-title">AI 토론 재생</div>
-        <div class="card-desc">실무⑤ 토론 배틀<br>사전 생성 결과 재생</div>
+        <div class="card-desc">실무⑤ 토론 배틀<br>정적 재생 (서버 불필요)</div>
+      </a>
+      <a class="card" href="javascript:void(0)" onclick="openDebate()" id="debateCard">
+        <div class="card-icon" style="font-size:2rem">EX</div>
+        <div class="card-title">토론 서버</div>
+        <div class="card-desc">실시간 생성 + TTS<br>(서버 필요)</div>
       </a>
     </div>
   </div>
