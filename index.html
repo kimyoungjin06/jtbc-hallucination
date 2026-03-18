@@ -117,10 +117,14 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
 const VIZ_URL = (typeof CONFIG !== 'undefined' && CONFIG.TEAM_VIZ_URL) || 'http://localhost:3000';
 function openDebate() { window.open(VIZ_URL + '/executor', '_blank'); }
 
-// 서버 상태 체크
-fetch(VIZ_URL + '/api/settings', { mode: 'no-cors' })
-  .then(() => { document.getElementById('debateCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#59d28f;font-size:0.8rem">● 서버 연결됨</span>'; })
-  .catch(() => { document.getElementById('debateCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#ff6b3d;font-size:0.8rem">○ 서버 미연결</span>'; });
+// 서버 상태 체크 (실패해도 콘솔 에러 없음)
+try {
+  const ctrl = new AbortController();
+  setTimeout(() => ctrl.abort(), 2000);
+  fetch(VIZ_URL + '/api/settings', { mode: 'no-cors', signal: ctrl.signal })
+    .then(() => { document.getElementById('debateCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#59d28f;font-size:0.8rem">● 서버 연결됨</span>'; })
+    .catch(() => { document.getElementById('debateCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#ff6b3d;font-size:0.8rem">○ 서버 미연결</span>'; });
+} catch(e) {}
 </script>
 
 </body>
