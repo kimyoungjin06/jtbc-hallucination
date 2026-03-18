@@ -4,7 +4,7 @@
   "subtitle": "AI 적합도 + 출연자 역량 기반 상대평가 (S~F 각 1명)",
   "evaluations": [
     {
-      "id": "p5", "name": "곽재식", "title": "과장", "department": "품질관리팀",
+      "id": "p5", "name": "곽재식", "title": "과장", "department": "품질관리팀", "img": "img/kwakjaesik.png",
       "character": "인간 위키피디아, AI 불신론자, 괴짜",
       "quote": "AI는 도구일 뿐, 진리는 제 뇌 속에 있습니다.",
       "aiAptitude": 61, "category": "알고리즘 수용형",
@@ -14,7 +14,7 @@
       "summary": "KAIST 석사, 교수, AI 저서 보유. 6명 중 유일한 AI 윤리 전문가."
     },
     {
-      "id": "p1", "name": "하석진", "title": "차장", "department": "미래 전략 기획실",
+      "id": "p1", "name": "하석진", "title": "차장", "department": "미래 전략 기획실", "img": "img/hasukjin.png",
       "character": "초고속 승진, 야망가, 냉혈한 T",
       "quote": "정의? 그건 승진 다음에나 찾는 거지.",
       "aiAptitude": 63, "category": "알고리즘 수용형",
@@ -24,7 +24,7 @@
       "summary": "기계공학 전공, AI 방송 다수 경험, CES 2025 탐방. 공학 기반 리더."
     },
     {
-      "id": "p4", "name": "허성범", "title": "인턴", "department": "인사팀",
+      "id": "p4", "name": "허성범", "title": "인턴", "department": "인사팀", "img": "img/heosung.png",
       "character": "인생 2회차, 하룻강아지 범, 맑은 눈 광인",
       "quote": "그건 틀린 말씀이죠. 해고는 제가 알아서 할게요.",
       "aiAptitude": 45, "category": "조건부 위임형",
@@ -34,7 +34,7 @@
       "summary": "KAIST AI 대학원생. AI 검증력 최고이나 조직 경험이 부족한 인턴."
     },
     {
-      "id": "p2", "name": "황제성", "title": "대리", "department": "글로벌 영업팀",
+      "id": "p2", "name": "황제성", "title": "대리", "department": "글로벌 영업팀", "img": "img/hwangjesung.png",
       "character": "생존왕, 만년 대리, 알코올 커뮤니케이션",
       "quote": "해고 통지서요? 에이~ 차장님 술이나 한잔하시죠!",
       "aiAptitude": 61, "category": "알고리즘 수용형",
@@ -44,7 +44,7 @@
       "summary": "수능 수리 1등급의 숨겨진 브레인. 소통력은 최고이나 AI 직접 경험 없음."
     },
     {
-      "id": "p3", "name": "츠키", "title": "주임", "department": "인사팀",
+      "id": "p3", "name": "츠키", "title": "주임", "department": "인사팀", "img": "img/tsuki.png",
       "character": "비밀(?) 낙하산, 본부장 외동딸, 해맑은 MZ",
       "quote": "내가 낙하산인 거... 아무도 모르겠징? 데헷!",
       "aiAptitude": 81, "category": "알고리즘 위임 고적합",
@@ -54,7 +54,7 @@
       "summary": "적응력과 표현력은 있으나 기술 배경 전무. 적합도 81%가 오히려 리스크."
     },
     {
-      "id": "p6", "name": "가온", "title": "사원", "department": "홍보마케팅팀",
+      "id": "p6", "name": "가온", "title": "사원", "department": "홍보마케팅팀", "img": "img/gaon.png",
       "character": "7형제 장남, 유교 보이, 예스맨",
       "quote": "아버님께서 말씀하셨습니다. 예의가 곧 실력이다!",
       "aiAptitude": 60, "category": "알고리즘 수용형",

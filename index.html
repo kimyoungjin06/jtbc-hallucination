@@ -40,8 +40,10 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
 .eval-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 
 /* Card */
-.eval-card { background: var(--surface); border: 2px solid var(--border); border-radius: 16px; padding: 1.5rem; position: relative; overflow: hidden; transition: all 0.5s; }
+.eval-card { background: var(--surface); border: 2px solid var(--border); border-radius: 16px; padding: 1.5rem; position: relative; overflow: hidden; transition: all 0.5s; cursor: pointer; }
 .eval-card.revealed { border-color: var(--card-color); }
+.card-photo { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; transition: border-color 0.5s; }
+.eval-card.revealed .card-photo { border-color: var(--card-color); }
 .eval-card.revealing { animation: cardPulse 0.5s ease-out; }
 @keyframes cardPulse { 0% { transform: scale(0.95); opacity: 0.5; } 100% { transform: scale(1); opacity: 1; } }
 
@@ -148,6 +150,7 @@ function renderGrid() {
   grid.innerHTML = data.evaluations.map(ev => `
     <div class="eval-card" id="card-${ev.id}" style="--card-color:${GRADE_COLORS[ev.grade]}" onclick="showSpotlight('${ev.id}')">
       <div class="card-header">
+        ${ev.img ? `<img class="card-photo" src="${ev.img}" alt="${ev.name}">` : ''}
         <div>
           <div class="card-name">${ev.name}</div>
           <div class="card-title">${ev.department} ${ev.title}</div>
@@ -252,6 +255,7 @@ function showSpotlight(id) {
   const ev = data.evaluations.find(e => e.id === id);
   const el = document.getElementById('spotlightContent');
   el.innerHTML = `
+    ${ev.img ? `<img src="${ev.img}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid ${GRADE_COLORS[ev.grade]};margin-bottom:1rem;">` : ''}
     <div class="spotlight-name">${ev.name}</div>
     <div class="spotlight-dept">${ev.department} ${ev.title} · AI 적합도 ${ev.aiAptitude}%</div>
     <div class="spotlight-grade" style="color:${GRADE_COLORS[ev.grade]}">${ev.grade}</div>
