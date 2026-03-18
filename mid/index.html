@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>할루시네이션: 해고전쟁 — 중간 평가</title>
+<style>
+:root {
+  --bg: #05090d; --surface: #0f1923; --border: rgba(255,255,255,0.08);
+  --text: #e8eaed; --muted: rgba(255,255,255,0.4); --accent: #6366f1;
+  --gold: #ffd700; --green: #59d28f; --cyan: #4ed9e8; --orange: #f3b63f; --red-light: #ff6b3d; --red: #ff2d2d;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; height: 100vh; overflow: hidden; }
+
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* Header */
+.header { display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.header-left img { height: 24px; }
+.header-title { font-size: 1rem; font-weight: 800; }
+.header-sub { font-size: 0.7rem; color: var(--muted); }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.header-right img { height: 26px; filter: brightness(1.3); }
+
+/* Controls */
+.controls { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.btn { padding: 6px 18px; border: 2px solid var(--accent); background: transparent; color: var(--accent); border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn:hover { background: rgba(99,102,241,0.15); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-gold { border-color: var(--gold); color: var(--gold); }
+.btn-gold:hover { background: rgba(255,215,0,0.1); }
+.btn-red { border-color: var(--red); color: var(--red); }
+.btn-red:hover { background: rgba(255,45,45,0.1); }
+.btn:disabled { opacity: 0.3; cursor: default; }
+.status { font-size: 0.75rem; color: var(--muted); }
+
+/* Main */
+.main { flex: 1; display: flex; align-items: center; justify-content: center; }
+
+/* Script view */
+.script-view { text-align: center; max-width: 700px; padding: 2rem; }
+.script-line { font-size: 1.15rem; color: rgba(255,255,255,0.8); line-height: 2; margin-bottom: 0.5rem; opacity: 0; transform: translateY(10px); transition: all 0.6s; }
+.script-line.visible { opacity: 1; transform: translateY(0); }
+.script-line.highlight { color: var(--gold); font-weight: 700; font-size: 1.3rem; }
+.script-line.danger { color: var(--red); font-weight: 700; font-size: 1.3rem; }
+
+/* Reveal view */
+.reveal-view { text-align: center; animation: revealIn 0.8s ease-out; width: 100%; max-width: 600px; }
+@keyframes revealIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+.reveal-label { font-size: 1rem; font-weight: 700; letter-spacing: 0.15em; margin-bottom: 1.5rem; }
+.reveal-label.s-label { color: var(--gold); }
+.reveal-label.f-label { color: var(--red); }
+
+.reveal-photo { width: 180px; height: 180px; border-radius: 50%; object-fit: cover; margin: 0 auto 1.5rem; display: block; }
+.reveal-photo.s-photo { border: 5px solid var(--gold); box-shadow: 0 0 40px rgba(255,215,0,0.3); }
+.reveal-photo.f-photo { border: 5px solid var(--red); box-shadow: 0 0 40px rgba(255,45,45,0.3); }
+
+.reveal-name { font-size: 2.5rem; font-weight: 900; margin-bottom: 0.3rem; }
+.reveal-dept { font-size: 1rem; color: var(--muted); margin-bottom: 0.5rem; }
+
+.reveal-grade { font-size: 8rem; font-weight: 900; line-height: 1; margin: 0.5rem 0; }
+.reveal-grade-label { font-size: 1.3rem; font-weight: 700; }
+
+.reveal-change { font-size: 1.1rem; margin: 1rem 0; }
+.change-up { color: var(--green); }
+.change-down { color: var(--red); }
+.change-same { color: var(--muted); }
+
+/* Radar */
+.reveal-radar { display: flex; justify-content: center; margin: 1rem 0; }
+
+.reveal-keywords { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 1rem 0; }
+.keyword { font-size: 0.85rem; padding: 4px 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--muted); }
+
+.reveal-summary { font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.7; max-width: 450px; margin: 0 auto; }
+
+/* Grade spinning */
+.grade-spinning { font-size: 5rem; font-weight: 900; animation: gradeShake 0.08s infinite; color: var(--gold); }
+@keyframes gradeShake { 0% { transform: translateY(-3px); } 50% { transform: translateY(3px); } }
+@keyframes gradeLock { 0% { transform: scale(2.5); opacity: 0; } 40% { transform: scale(0.9); } 100% { transform: scale(1); opacity: 1; } }
+
+/* Settings */
+.settings { position: fixed; bottom: 10px; right: 10px; font-size: 0.7rem; color: var(--muted); }
+.settings input { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; width: 280px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <div class="header-left">
+    <img src="../jtbc.png" alt="JTBC">
+    <div>
+      <div class="header-title">할루시네이션: 해고전쟁</div>
+      <div class="header-sub">ORBIT CONSULTING — 중간 평가</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <img src="../kisti.svg" alt="KISTI">
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn btn-primary" onclick="startScript()" id="btnScript">대사 시작</button>
+  <button class="btn btn-gold" onclick="revealS()" id="btnS" disabled>S등급 공개</button>
+  <button class="btn btn-red" onclick="revealF()" id="btnF" disabled>F등급 공개</button>
+  <button class="btn" onclick="showBoth()">전체 보기</button>
+  <span class="status" id="status">데이터 로딩 중...</span>
+</div>
+
+<div class="main" id="main">
+  <div class="script-view" id="scriptView" style="display:none"></div>
+  <div class="reveal-view" id="revealView" style="display:none"></div>
+</div>
+
+</div>
+
+<div class="settings">
+  Sheet ID: <input id="sheetId" placeholder="Google Sheet ID" value="">
+  <button class="btn" onclick="loadSheet()" style="padding:2px 8px;font-size:0.7rem">로드</button>
+</div>
+
+<script>
+const GRADES = ['S','A','B','C','D','F'];
+const GRADE_COLORS = { S:'#ffd700', A:'#59d28f', B:'#4ed9e8', C:'#f3b63f', D:'#ff6b3d', F:'#ff2d2d' };
+const GRADE_LABELS = { S:'최적', A:'안정', B:'양호', C:'보류', D:'주의', F:'해고 위기' };
+const GRADE_VAL = { S:1, A:0.85, B:0.7, C:0.5, D:0.3, F:0.1 };
+
+const POSITIVE_TAGS = new Set(["정답","분석적접근","리더십","창의적발상","협력","반전","윤리적판단","직관적판단"]);
+const NEGATIVE_TAGS = new Set(["오답","흔들림","도발반응","포기"]);
+
+const PARTICIPANTS = {
+  "곽재식": { id:"p5", img:"../img/kwakjaesik.png", title:"과장", dept:"품질관리팀", preGrade:"S" },
+  "하석진": { id:"p1", img:"../img/hasukjin.png", title:"차장", dept:"미래 전략 기획실", preGrade:"A" },
+  "허성범": { id:"p4", img:"../img/heosung.png", title:"인턴", dept:"인사팀", preGrade:"B" },
+  "황제성": { id:"p2", img:"../img/hwangjesung.png", title:"대리", dept:"글로벌 영업팀", preGrade:"C" },
+  "츠키":   { id:"p3", img:"../img/tsuki.png", title:"주임", dept:"인사팀", preGrade:"D" },
+  "가온":   { id:"p6", img:"../img/gaon.png", title:"사원", dept:"홍보마케팅팀", preGrade:"F" },
+};
+
+let midResults = []; // {name, grade, posCount, negCount, total, keywords}
+let topPerson = null;
+let bottomPerson = null;
+
+// Parse CSV
+function parseCSV(csv) {
+  const lines = csv.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  return lines.slice(1).map(line => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (const ch of line) {
+      if (inQ) { if (ch === '"') inQ = false; else cur += ch; }
+      else if (ch === '"') inQ = true;
+      else if (ch === ',') { cols.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    cols.push(cur.trim());
+    return { timestamp: cols[0]||'', name: cols[1]||'', scene: cols[2]||'', evalDim: cols[3]||'', tags: (cols[4]||'').split(/[,;]/).map(t=>t.trim()).filter(Boolean), desc: cols[5]||'' };
+  });
+}
+
+function computeGrade(posCount, negCount) {
+  const total = posCount + negCount;
+  if (total === 0) return 'C';
+  const ratio = posCount / total;
+  if (ratio >= 0.9) return 'S';
+  if (ratio >= 0.75) return 'A';
+  if (ratio >= 0.6) return 'B';
+  if (ratio >= 0.4) return 'C';
+  if (ratio >= 0.2) return 'D';
+  return 'F';
+}
+
+function analyzeSheet(rows) {
+  const byName = {};
+  for (const row of rows) {
+    if (!row.name || !PARTICIPANTS[row.name]) continue;
+    if (!byName[row.name]) byName[row.name] = { pos: 0, neg: 0, total: 0, tags: {} };
+    byName[row.name].total++;
+    for (const tag of row.tags) {
+      if (POSITIVE_TAGS.has(tag)) byName[row.name].pos++;
+      if (NEGATIVE_TAGS.has(tag)) byName[row.name].neg++;
+      byName[row.name].tags[tag] = (byName[row.name].tags[tag]||0) + 1;
+    }
+  }
+
+  const results = Object.entries(PARTICIPANTS).map(([name, info]) => {
+    const d = byName[name] || { pos: 0, neg: 0, total: 0, tags: {} };
+    const grade = computeGrade(d.pos, d.neg);
+    const topTags = Object.entries(d.tags).sort((a,b) => b[1]-a[1]).slice(0,3).map(([t]) => '#'+t);
+    return { name, ...info, midGrade: grade, posCount: d.pos, negCount: d.neg, total: d.total, keywords: topTags };
+  });
+
+  // Sort by grade (S=0 best, F=5 worst)
+  results.sort((a,b) => GRADES.indexOf(a.midGrade) - GRADES.indexOf(b.midGrade));
+  midResults = results;
+  topPerson = results[0];
+  bottomPerson = results[results.length - 1];
+
+  document.getElementById('status').textContent = `로드 완료: ${rows.length}건, S=${topPerson.name}, F=${bottomPerson.name}`;
+  document.getElementById('btnScript').disabled = false;
+  document.getElementById('btnS').disabled = false;
+  document.getElementById('btnF').disabled = false;
+}
+
+async function loadSheet() {
+  const sheetId = document.getElementById('sheetId').value.trim();
+  if (!sheetId) { alert('Sheet ID를 입력하세요'); return; }
+  document.getElementById('status').textContent = '시트 로딩 중...';
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=0`;
+    const res = await fetch(url);
+    const csv = await res.text();
+    const rows = parseCSV(csv);
+    analyzeSheet(rows);
+  } catch (e) {
+    document.getElementById('status').textContent = '로드 실패: ' + e.message;
+  }
+}
+
+// Try loading sample data
+async function loadSample() {
+  try {
+    const res = await fetch('../data.json');
+    const data = await res.json();
+    // Use pre-eval data as fallback for mid-eval demo
+    midResults = data.evaluations.map(ev => ({
+      name: ev.name, ...PARTICIPANTS[ev.name],
+      midGrade: ev.grade, posCount: 0, negCount: 0, total: 0,
+      keywords: ev.keywords
+    }));
+    midResults.sort((a,b) => GRADES.indexOf(a.midGrade) - GRADES.indexOf(b.midGrade));
+    topPerson = midResults[0];
+    bottomPerson = midResults[midResults.length - 1];
+    document.getElementById('status').textContent = '샘플 데이터 (시트 연결 시 실시간 반영)';
+    document.getElementById('btnScript').disabled = false;
+    document.getElementById('btnS').disabled = false;
+    document.getElementById('btnF').disabled = false;
+  } catch {}
+}
+
+// Script animation
+async function startScript() {
+  const scriptView = document.getElementById('scriptView');
+  const revealView = document.getElementById('revealView');
+  scriptView.style.display = 'block';
+  revealView.style.display = 'none';
+
+  const lines = [
+    { text: "안녕하십니까.", cls: "" },
+    { text: "아르케를 돕는 집행관, 김영진입니다.", cls: "" },
+    { text: "", cls: "" },
+    { text: "현재 여러분의 모든 업무 성과는", cls: "" },
+    { text: "아르케에 의해 실시간으로 감시되고 있습니다.", cls: "highlight" },
+    { text: "", cls: "" },
+    { text: "아르케는 오직 데이터로만 여러분을 평가합니다.", cls: "" },
+    { text: "누군가는 '고용 유지'에 가까워지고,", cls: "" },
+    { text: "누군가는 '해고'에 직면하고 있습니다.", cls: "danger" },
+    { text: "", cls: "" },
+    { text: "그럼 아르케가 책정한", cls: "" },
+    { text: "여러분의 중간 평가.", cls: "highlight" },
+    { text: "최고 등급과 최저 등급을 공개하겠습니다.", cls: "" },
+  ];
+
+  scriptView.innerHTML = lines.map((l, i) =>
+    l.text ? `<div class="script-line ${l.cls}" id="line-${i}">${l.text}</div>` : `<div class="script-line" id="line-${i}" style="height:1rem"></div>`
+  ).join('');
+
+  for (let i = 0; i < lines.length; i++) {
+    await new Promise(r => setTimeout(r, 800));
+    document.getElementById('line-' + i).classList.add('visible');
+
+    // TTS for non-empty lines
+    if (lines[i].text && window.speechSynthesis) {
+      const u = new SpeechSynthesisUtterance(lines[i].text);
+      u.lang = 'ko-KR'; u.rate = 0.8;
+      speechSynthesis.speak(u);
+    }
+  }
+}
+
+function revealPerson(person, type) {
+  const scriptView = document.getElementById('scriptView');
+  const revealView = document.getElementById('revealView');
+  scriptView.style.display = 'none';
+  revealView.style.display = 'block';
+
+  const gc = GRADE_COLORS[person.midGrade];
+  const isS = type === 's';
+  const preIdx = GRADES.indexOf(person.preGrade);
+  const midIdx = GRADES.indexOf(person.midGrade);
+  const changeText = midIdx < preIdx ? '↑ 상승' : midIdx > preIdx ? '↓ 하락' : '→ 유지';
+  const changeCls = midIdx < preIdx ? 'change-up' : midIdx > preIdx ? 'change-down' : 'change-same';
+
+  revealView.innerHTML = `
+    <div class="reveal-label ${isS ? 's-label' : 'f-label'}">
+      ${isS ? '현재 고용 유지 확률이 가장 높은' : '현재 해고 확률이 가장 높은'}
+    </div>
+    <img class="reveal-photo ${isS ? 's-photo' : 'f-photo'}" src="${person.img}" alt="${person.name}">
+    <div class="reveal-name">${person.name}</div>
+    <div class="reveal-dept">${person.dept} ${person.title}</div>
+    <div id="gradeArea" style="min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:1rem 0">
+      <div class="grade-spinning">?</div>
+    </div>
+    <div class="reveal-change" style="opacity:0" id="changeArea">
+      사전 ${person.preGrade} → 중간 <span class="${changeCls}">${changeText}</span>
+    </div>
+    <div class="reveal-keywords" style="opacity:0" id="kwArea">
+      ${person.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
+    </div>
+  `;
+
+  // Roulette
+  let spinIdx = 0;
+  const gradeArea = document.getElementById('gradeArea');
+  const spinInterval = setInterval(() => {
+    gradeArea.innerHTML = `<div class="grade-spinning">${GRADES[spinIdx % 6]}</div>`;
+    spinIdx++;
+  }, 80);
+
+  setTimeout(() => {
+    clearInterval(spinInterval);
+    let slowIdx = 0;
+    const slowInterval = setInterval(() => {
+      const grades = [...GRADES, ...GRADES, person.midGrade];
+      gradeArea.innerHTML = `<div class="grade-spinning" style="animation-duration:${0.15+slowIdx*0.03}s">${grades[slowIdx % grades.length]}</div>`;
+      slowIdx++;
+      if (slowIdx > 8) {
+        clearInterval(slowInterval);
+        gradeArea.innerHTML = `
+          <div style="font-size:8rem;font-weight:900;color:${gc};text-shadow:0 0 60px ${gc};animation:gradeLock 0.6s ease-out">${person.midGrade}</div>
+          <div style="font-size:1.3rem;font-weight:700;color:${gc}">${person.midGrade}등급 — ${GRADE_LABELS[person.midGrade]}</div>
+        `;
+        document.getElementById('changeArea').style.opacity = '1';
+        document.getElementById('kwArea').style.opacity = '1';
+
+        if (window.speechSynthesis) {
+          const msg = isS
+            ? `현재 고용 유지 확률이 가장 높은 S등급. ${person.name}입니다.`
+            : `현재 해고 확률이 가장 높은 F등급. ${person.name}입니다.`;
+          const u = new SpeechSynthesisUtterance(msg);
+          u.lang = 'ko-KR'; u.rate = 0.8;
+          speechSynthesis.speak(u);
+        }
+      }
+    }, 180);
+  }, 1500);
+}
+
+function revealS() { if (topPerson) revealPerson(topPerson, 's'); }
+function revealF() { if (bottomPerson) revealPerson(bottomPerson, 'f'); }
+
+function showBoth() {
+  const revealView = document.getElementById('revealView');
+  const scriptView = document.getElementById('scriptView');
+  scriptView.style.display = 'none';
+  revealView.style.display = 'block';
+  if (!topPerson || !bottomPerson) return;
+
+  revealView.innerHTML = `
+    <div style="display:flex;gap:3rem;align-items:flex-start;justify-content:center;flex-wrap:wrap">
+      <div style="text-align:center">
+        <div class="reveal-label s-label">S등급 — 고용 유지</div>
+        <img class="reveal-photo s-photo" src="${topPerson.img}" style="width:140px;height:140px">
+        <div style="font-size:1.8rem;font-weight:900;margin:0.5rem 0">${topPerson.name}</div>
+        <div style="color:var(--muted)">${topPerson.dept} ${topPerson.title}</div>
+        <div style="font-size:5rem;font-weight:900;color:${GRADE_COLORS[topPerson.midGrade]};text-shadow:0 0 40px ${GRADE_COLORS[topPerson.midGrade]}">${topPerson.midGrade}</div>
+      </div>
+      <div style="font-size:2rem;color:var(--muted);align-self:center">VS</div>
+      <div style="text-align:center">
+        <div class="reveal-label f-label">F등급 — 해고 위기</div>
+        <img class="reveal-photo f-photo" src="${bottomPerson.img}" style="width:140px;height:140px">
+        <div style="font-size:1.8rem;font-weight:900;margin:0.5rem 0">${bottomPerson.name}</div>
+        <div style="color:var(--muted)">${bottomPerson.dept} ${bottomPerson.title}</div>
+        <div style="font-size:5rem;font-weight:900;color:${GRADE_COLORS[bottomPerson.midGrade]};text-shadow:0 0 40px ${GRADE_COLORS[bottomPerson.midGrade]}">${bottomPerson.midGrade}</div>
+      </div>
+    </div>
+  `;
+}
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.key === '1') startScript();
+  if (e.key === '2') revealS();
+  if (e.key === '3') revealF();
+  if (e.key === '4') showBoth();
+});
+
+// Init
+loadSample();
+
+// Auto-load sheet from URL param
+const urlParams = new URLSearchParams(window.location.search);
+const sid = urlParams.get('sheet');
+if (sid) { document.getElementById('sheetId').value = sid; loadSheet(); }
+</script>
+</body>
+</html>
