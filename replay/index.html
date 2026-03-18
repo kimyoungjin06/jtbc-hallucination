@@ -94,32 +94,28 @@ body { background: #0a0a12; color: #e8eaed; font-family: 'Noto Sans KR', sans-se
 .ac-last { font-size: 0.7rem; color: rgba(255,255,255,0.35); margin-top: 0.2vh; line-height: 1.4; }
 .ac-count { font-size: 0.6rem; color: rgba(255,255,255,0.2); font-family: 'Share Tech Mono', monospace; }
 
-/* ── 선택 화면 (대기화면 중앙 오버레이) ── */
-.select-overlay {
-  position: fixed; z-index: 50; top: 120px; left: 0; right: 0; bottom: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  background: rgba(10,10,18,0.85); backdrop-filter: blur(8px);
-}
-.select-overlay.hidden { display: none; }
-.so-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.5rem, 3vw, 2.5rem); color: var(--cyan); margin-bottom: 1vh; }
-.so-topic { font-size: clamp(0.95rem, 1.3vw, 1.15rem); color: rgba(255,255,255,0.5); text-align: center; max-width: 550px; line-height: 1.7; margin-bottom: 3vh; }
-.so-cards { display: flex; gap: 3vw; }
+/* ── 선택 카드 (대기화면 중앙 패널 안) ── */
+.select-hub { text-align: center; }
+.select-hub.hidden { display: none; }
+.so-title { font-family: 'Orbitron', sans-serif; font-size: clamp(1.2rem, 2.2vw, 1.8rem); color: var(--cyan); margin-bottom: 1vh; }
+.so-topic { font-size: clamp(0.85rem, 1.1vw, 1rem); color: rgba(255,255,255,0.45); max-width: 400px; line-height: 1.6; margin: 0 auto 2vh; }
+.so-cards { display: flex; gap: 2vw; justify-content: center; }
 .so-card {
-  padding: 3vh 3vw; border-radius: 12px; cursor: pointer; text-align: center;
-  min-width: 200px; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
+  padding: 2vh 2vw; border-radius: 10px; cursor: pointer; text-align: center;
+  min-width: 160px; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.02);
 }
-.so-card:hover { transform: translateY(-4px); }
+.so-card:hover { transform: translateY(-3px); }
 .so-card.pro { border-color: rgba(0,240,255,0.2); }
 .so-card.pro:hover { border-color: var(--cyan); background: rgba(0,240,255,0.06); }
 .so-card.con { border-color: rgba(255,0,170,0.2); }
 .so-card.con:hover { border-color: var(--magenta); background: rgba(255,0,170,0.06); }
-.so-card .sc-result { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; margin-bottom: 0.8vh; }
+.so-card .sc-result { font-family: 'Orbitron', sans-serif; font-size: 1.6rem; font-weight: 900; margin-bottom: 0.5vh; }
 .so-card.pro .sc-result { color: var(--cyan); }
 .so-card.con .sc-result { color: var(--magenta); }
-.so-card .sc-label { font-size: 1rem; font-weight: 700; margin-bottom: 0.4vh; }
-.so-card .sc-desc { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
-.so-hint { font-size: 0.85rem; color: rgba(255,255,255,0.25); margin-top: 2vh; }
+.so-card .sc-label { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3vh; }
+.so-card .sc-desc { font-size: 0.75rem; color: rgba(255,255,255,0.35); }
+.so-hint { font-size: 0.75rem; color: rgba(255,255,255,0.2); margin-top: 1.5vh; }
 </style>
 </head>
 <body class="cyber">
@@ -156,28 +152,27 @@ body { background: #0a0a12; color: #e8eaed; font-family: 'Noto Sans KR', sans-se
         </div>
         <div class="metric-cards" id="metricCards"></div>
       </div>
+      <!-- 선택 카드 (대기화면 안) -->
+      <div class="select-hub" id="selectHub">
+        <div class="so-title">AI 토론 배틀 — 결과 선택</div>
+        <div class="so-topic">AI가 산출한 직원 해고 데이터를<br>인간 개입 없이 즉시 집행해야 하는가?</div>
+        <div class="so-cards">
+          <div class="so-card pro" onclick="startReplay('pro')">
+            <div class="sc-result">2 : 4</div>
+            <div class="sc-label">찬성 측 베스트</div>
+            <div class="sc-desc">찬성 2명 끝까지 버팀</div>
+          </div>
+          <div class="so-card con" onclick="startReplay('con')">
+            <div class="sc-result">0 : 6</div>
+            <div class="sc-label">반대 측 베스트</div>
+            <div class="sc-desc">찬성→반대 극적 역전</div>
+          </div>
+        </div>
+        <div class="so-hint">1 = 찬성 베스트 / 2 = 반대 베스트</div>
+      </div>
     </div>
     <div class="cyber-right" id="rightScores"></div>
   </div>
-</div>
-
-<!-- 선택 오버레이 (대기화면 위) -->
-<div class="select-overlay" id="selectOverlay">
-  <div class="so-title">AI 토론 배틀 — 결과 재생</div>
-  <div class="so-topic">AI가 산출한 직원 해고 데이터를<br>인간의 개입 없이 즉시 집행해야 하는가?</div>
-  <div class="so-cards">
-    <div class="so-card pro" onclick="startReplay('pro')">
-      <div class="sc-result">2 : 4</div>
-      <div class="sc-label">찬성 측 베스트</div>
-      <div class="sc-desc">찬성 2명 끝까지 버팀<br>팽팽한 토론</div>
-    </div>
-    <div class="so-card con" onclick="startReplay('con')">
-      <div class="sc-result">0 : 6</div>
-      <div class="sc-label">반대 측 베스트</div>
-      <div class="sc-desc">찬성 2명 모두 전환<br>극적 역전</div>
-    </div>
-  </div>
-  <div class="so-hint">1 = 찬성 베스트 / 2 = 반대 베스트</div>
 </div>
 
 <!-- 재생 화면 (3패널) -->
@@ -280,7 +275,7 @@ function updateAgentState(agent, content) {
 function startReplay(type) {
   currentData = type === 'pro' ? INLINE_PRO : INLINE_CON;
   currentTurnIdx = 0; paused = false;
-  document.getElementById('selectOverlay').classList.add('hidden');
+  document.getElementById('selectHub').classList.add('hidden');
   document.getElementById('cyberStandby').classList.add('hidden');
   document.getElementById('replayApp').classList.add('active');
   document.getElementById('chatLog').innerHTML = '';
@@ -361,7 +356,7 @@ function skipToEnd() {
 function backToSelect() {
   clearTimeout(playTimer);
   document.getElementById('replayApp').classList.remove('active');
-  document.getElementById('selectOverlay').classList.remove('hidden');
+  document.getElementById('selectHub').classList.remove('hidden');
   document.getElementById('cyberStandby').classList.remove('hidden');
 }
 
