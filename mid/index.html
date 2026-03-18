@@ -153,13 +153,14 @@ function exitStandby() {
 /* ═══════════════════════════════════════
    config.js → 점수 & 대상자 로드
    ═══════════════════════════════════════ */
+// 직급순: 차장 → 과장 → 대리 → 주임 → 사원 → 인턴
 const PEOPLE = [
-  { id:'p6', name:'가온',   title:'사원', dept:'홍보마케팅팀',     img:'../img/gaon.png' },
-  { id:'p3', name:'츠키',   title:'주임', dept:'인사팀',           img:'../img/tsuki.png' },
-  { id:'p2', name:'황제성', title:'대리', dept:'글로벌 영업팀',    img:'../img/hwangjesung.png' },
-  { id:'p4', name:'허성범', title:'인턴', dept:'인사팀',           img:'../img/heosung.png' },
-  { id:'p1', name:'하석진', title:'차장', dept:'미래 전략 기획실', img:'../img/hasukjin.png' },
-  { id:'p5', name:'곽재식', title:'과장', dept:'품질관리팀',       img:'../img/kwakjaesik.png' }
+  { id:'p1', name:'하석진', title:'차장', dept:'미래전략기획실', img:'../img/hasukjin.png' },
+  { id:'p5', name:'곽재식', title:'과장', dept:'품질관리팀',     img:'../img/kwakjaesik.png' },
+  { id:'p2', name:'황제성', title:'대리', dept:'글로벌영업팀',   img:'../img/hwangjesung.png' },
+  { id:'p3', name:'츠키',   title:'주임', dept:'인사팀',         img:'../img/tsuki.png' },
+  { id:'p6', name:'가온',   title:'사원', dept:'홍보마케팅팀',   img:'../img/gaon.png' },
+  { id:'p4', name:'허성범', title:'인턴', dept:'인사팀',         img:'../img/heosung.png' }
 ];
 
 const GRADES = ['S','A','B','C','D','F'];
