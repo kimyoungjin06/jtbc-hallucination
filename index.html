@@ -127,9 +127,6 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
   <div class="eval-grid" id="grid"></div>
 </div>
 
-<div class="spotlight" id="spotlight" style="display:none" onclick="closeSpotlight()">
-  <div class="spotlight-content" id="spotlightContent"></div>
-</div>
 
 <script>
 const GRADES = ['S','A','B','C','D','F'];
@@ -148,14 +145,13 @@ async function init() {
 function renderGrid() {
   const grid = document.getElementById('grid');
   grid.innerHTML = data.evaluations.map(ev => `
-    <div class="eval-card" id="card-${ev.id}" style="--card-color:${GRADE_COLORS[ev.grade]}" onclick="showSpotlight('${ev.id}')">
+    <div class="eval-card" id="card-${ev.id}" style="--card-color:${GRADE_COLORS[ev.grade]}">
       <div class="card-header">
         ${ev.img ? `<img class="card-photo" src="${ev.img}" alt="${ev.name}">` : ''}
         <div>
           <div class="card-name">${ev.name}</div>
           <div class="card-title">${ev.department} ${ev.title}</div>
           <div class="card-aptitude">AI 적합도 ${ev.aiAptitude}% · ${ev.category}</div>
-          <div class="char-badge">${ev.character}</div>
         </div>
       </div>
       <div class="grade-area" id="grade-${ev.id}">
@@ -164,8 +160,7 @@ function renderGrid() {
       <div class="keywords" style="opacity:0" id="kw-${ev.id}">
         ${ev.keywords.map(k => `<span class="keyword">${k}</span>`).join('')}
       </div>
-      <div class="card-summary" id="sum-${ev.id}">${ev.summary}</div>
-      <div class="radar-area" id="radar-${ev.id}"></div>
+      <div class="card-summary">${ev.summary}</div>
     </div>
   `).join('');
 }
@@ -176,7 +171,6 @@ function revealCard(id) {
   const card = document.getElementById('card-' + id);
   const gradeEl = document.getElementById('grade-' + id);
   const kwEl = document.getElementById('kw-' + id);
-  const radarEl = document.getElementById('radar-' + id);
 
   card.classList.add('revealing');
   setTimeout(() => card.classList.remove('revealing'), 500);
@@ -205,7 +199,6 @@ function revealCard(id) {
         card.classList.add('revealed');
         card.style.borderColor = GRADE_COLORS[ev.grade];
         kwEl.style.opacity = '1';
-        radarEl.innerHTML = createRadar(ev.scores, GRADE_COLORS[ev.grade]);
         revealedSet.add(id);
 
         // TTS
@@ -235,12 +228,10 @@ function revealAll() {
     const card = document.getElementById('card-' + ev.id);
     const gradeEl = document.getElementById('grade-' + ev.id);
     const kwEl = document.getElementById('kw-' + ev.id);
-    const radarEl = document.getElementById('radar-' + ev.id);
     gradeEl.innerHTML = `<div class="grade-final" style="color:${GRADE_COLORS[ev.grade]}">${ev.grade}</div><div class="grade-label" style="color:${GRADE_COLORS[ev.grade]}">${GRADE_LABELS[ev.grade]}</div>`;
     card.classList.add('revealed');
     card.style.borderColor = GRADE_COLORS[ev.grade];
     kwEl.style.opacity = '1';
-    radarEl.innerHTML = createRadar(ev.scores, GRADE_COLORS[ev.grade]);
     revealedSet.add(ev.id);
   }
 }
