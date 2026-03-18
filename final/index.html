@@ -148,10 +148,8 @@ const PEOPLE = [
 ];
 
 const { GRADES, GC, DK, DL, RANK } = CyberBG;
-const GL = { S:'최적', A:'안정', B:'양호', C:'보류', D:'주의', F:'해고 위기' };
 
 const SCORES = CONFIG.FINAL_SCORES || CONFIG.MID_SCORES;
-const FINAL_GRADES = CONFIG.FINAL_GRADES || {};
 const FIRED = CONFIG.FINAL_FIRED || [];
 const RETAINED = CONFIG.FINAL_RETAINED || [];
 const VERDICTS = CONFIG.FINAL_VERDICTS || {};
@@ -191,9 +189,9 @@ function executeVerdict() {
   verdictBusy = true;
 
   const person = PEOPLE.find(p => p.id === pid);
-  const grade = FINAL_GRADES[pid] || 'C';
-  const gc = GC[grade];
   const isFired = FIRED.includes(pid);
+  const grade = isFired ? '해고' : '고용유지';
+  const gc = isFired ? '#ff2d2d' : '#59d28f';
   const v = VERDICTS[pid] || {};
 
   const overlay = document.getElementById('verdictOverlay');
@@ -217,52 +215,58 @@ function executeVerdict() {
   document.getElementById('vDept').textContent = `${person.dept} ${person.title}`;
   overlay.classList.add('show');
 
-  // Phase 1 (1.5s): 평가문
-  setTimeout(() => {
-    document.getElementById('vEval').textContent = v.evaluation || '';
-    document.getElementById('vEval').classList.add('show');
-    // TTS: 평가문
-    tryTTS(v.evaluation || '');
-  }, 1500);
+  // 평가문 길이에 비례한 타이밍 (글자당 약 120ms + 여유)
+  const evalLen = (v.evaluation || '').length;
+  const t1 = 1500;                          // Phase 1: 평가문 시작
+  const t2 = t1 + Math.max(5000, evalLen * 120);  // Phase 2: 결론 (평가문 읽을 시간)
+  const t3 = t2 + 3000;                     // Phase 3: 명령 + 상태
 
-  // Phase 2 (5s): 등급 + 결론
+  // Phase 1: 평가문
   setTimeout(() => {
-    // Grade badge
+    document.getElementById('vEval').textContent = v.evaluation || '(평가문 없음)';
+    document.getElementById('vEval').classList.add('show');
+    // TTS: 전체 멘트 (평가문 + 결론 + 명령)
+    const fullScript = `${v.evaluation || ''} ${v.conclusion || ''} ${v.order || ''}`;
+    tryTTS(fullScript);
+  }, t1);
+
+  // Phase 2: 해고/고용유지 + 결론
+  setTimeout(() => {
     const badge = document.getElementById('vGradeBadge');
     badge.style.display = 'flex';
     document.getElementById('vGrade').style.color = gc;
-    document.getElementById('vGrade').textContent = grade;
+    document.getElementById('vGrade').textContent = isFired ? '해고' : '유지';
     document.getElementById('vLabel').style.color = gc;
-    document.getElementById('vLabel').textContent = `${grade}등급 — ${GL[grade]}`;
+    document.getElementById('vLabel').textContent = isFired ? '해고 대상자' : '고용 유지 대상자';
 
-    // Photo glow
     document.getElementById('vPhoto').style.borderColor = gc;
     document.getElementById('vName').style.color = gc;
 
-    // Conclusion
     const concEl = document.getElementById('vConclusion');
     concEl.textContent = v.conclusion || '';
-    concEl.style.color = isFired ? '#ff2d2d' : '#59d28f';
+    concEl.style.color = gc;
     concEl.classList.add('show');
-  }, 5000);
+  }, t2);
 
-  // Phase 3 (7s): 명령 + 상태
+  // Phase 3: 명령 + 상태 배지
   setTimeout(() => {
     document.getElementById('vOrder').textContent = v.order || '';
     document.getElementById('vOrder').classList.add('show');
 
     const status = document.getElementById('vStatus');
-    status.style.color = isFired ? '#ff2d2d' : '#59d28f';
+    status.style.color = gc;
     status.textContent = isFired ? '── 해 고 ──' : '── 고용 유지 ──';
     status.classList.add('show');
 
     verdictDone.add(pid);
     verdictBusy = false;
-  }, 7000);
+  }, t3);
 }
 
 function closeVerdict() {
   document.getElementById('verdictOverlay').classList.remove('show');
+  // TTS 중지
+  if (window.speechSynthesis) speechSynthesis.cancel();
 }
 
 /* ═══════════════════════════════════════
