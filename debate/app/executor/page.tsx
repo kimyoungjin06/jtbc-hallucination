@@ -475,6 +475,19 @@ function ModeTabBar({
   evalCount: number;
   ttsActive: boolean;
 }) {
+  const [showExtra, setShowExtra] = useState(false);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.altKey && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        setShowExtra(prev => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
   return (
     <nav className="exec-mode-nav">
       <button className={`exec-mode-tab ${mode === "debate" ? "active" : ""}`} data-mode="debate" onClick={() => onChange("debate")}>
@@ -482,15 +495,19 @@ function ModeTabBar({
         <span className="exec-mode-label">토론 배틀</span>
         {debateCompleted > 0 && <span className="exec-mode-badge">{debateCompleted}/3</span>}
       </button>
-      <button className={`exec-mode-tab ${mode === "dashboard" ? "active" : ""}`} data-mode="dashboard" onClick={() => onChange("dashboard")}>
-        <span className="exec-mode-icon">📊</span>
-        <span className="exec-mode-label">종합 대시보드</span>
-      </button>
-      <button className={`exec-mode-tab ${mode === "announce" ? "active" : ""}`} data-mode="announce" onClick={() => onChange("announce")}>
-        <span className="exec-mode-icon">📢</span>
-        <span className="exec-mode-label">최종 발표</span>
-        {ttsActive && <span className="exec-mode-live">LIVE</span>}
-      </button>
+      {showExtra && (
+        <>
+          <button className={`exec-mode-tab ${mode === "dashboard" ? "active" : ""}`} data-mode="dashboard" onClick={() => onChange("dashboard")}>
+            <span className="exec-mode-icon">📊</span>
+            <span className="exec-mode-label">종합 대시보드</span>
+          </button>
+          <button className={`exec-mode-tab ${mode === "announce" ? "active" : ""}`} data-mode="announce" onClick={() => onChange("announce")}>
+            <span className="exec-mode-icon">📢</span>
+            <span className="exec-mode-label">최종 발표</span>
+            {ttsActive && <span className="exec-mode-live">LIVE</span>}
+          </button>
+        </>
+      )}
     </nav>
   );
 }
