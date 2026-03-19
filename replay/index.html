@@ -55,6 +55,16 @@ body { background: #0a0a12; color: var(--text); font-family: 'Noto Sans KR', san
 }
 .m-btn:hover { background: rgba(0,240,255,0.08); }
 
+/* 줄다리기 바 */
+.tug-bar { display: flex; align-items: center; padding: 0.6vh 2vw; gap: 0.8vw; flex-shrink: 0; }
+.tug-label { font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; flex-shrink: 0; min-width: 5em; }
+.tug-label.pro { color: var(--cyan); text-align: right; }
+.tug-label.con { color: var(--magenta); text-align: left; }
+.tug-track { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; position: relative; }
+.tug-fill-pro { position: absolute; left: 0; top: 0; height: 100%; background: var(--cyan); border-radius: 3px 0 0 3px; transition: width 0.5s ease; }
+.tug-fill-con { position: absolute; right: 0; top: 0; height: 100%; background: var(--magenta); border-radius: 0 3px 3px 0; transition: width 0.5s ease; }
+.tug-center { position: absolute; left: 50%; top: -2px; width: 2px; height: 10px; background: rgba(255,255,255,0.15); transform: translateX(-50%); }
+
 /* 스포트라이트 (현재 발언자) */
 .meeting-spotlight {
   padding: 1.5vh 2vw; margin: 1vh 2vw;
@@ -185,6 +195,15 @@ body { background: #0a0a12; color: var(--text); font-family: 'Noto Sans KR', san
       <button class="m-btn" onclick="backToSelect()">← 선택</button>
     </div>
   </div>
+  <div class="tug-bar" id="tugBar">
+    <span class="tug-label pro" id="tugPro">찬성 2</span>
+    <div class="tug-track">
+      <div class="tug-fill-pro" id="tugFillPro" style="width:33%"></div>
+      <div class="tug-fill-con" id="tugFillCon" style="width:33%"></div>
+      <div class="tug-center"></div>
+    </div>
+    <span class="tug-label con" id="tugCon">반대 2</span>
+  </div>
   <div class="meeting-spotlight" id="spotlight">
     <div class="spot-empty">참가자들이 발언을 준비 중입니다...</div>
   </div>
@@ -239,19 +258,46 @@ function getStance(agent,content) {
 }
 function stanceLabel(s) { return s==='pro'?'찬성':s==='con'?'반대':'중립'; }
 
-function renderGrid() {
+function initGrid() {
   document.getElementById('meetingGrid').innerHTML = AGENTS.map(a => {
     const s = states[a.id] || { stance: a.start==='찬성'?'pro':a.start==='반대'?'con':'neutral', count:0, last:'', speaking:false };
-    return `<article class="meeting-tile ${s.speaking?'speaking active':''}" id="tile-${a.id}">
+    return `<article class="meeting-tile" id="tile-${a.id}">
       <div class="tile-head">
         <div class="tile-avatar">${a.avatar}</div>
         <div><div class="tile-name">${a.id}</div><div class="tile-role">${a.role}</div></div>
       </div>
-      <span class="tile-stance ${s.stance}">${stanceLabel(s.stance)}</span>
-      <div class="tile-last">${s.last||'대기 중'}</div>
-      <div class="tile-count">발언 ${s.count}회</div>
+      <span class="tile-stance ${s.stance}" id="stance-${a.id}">${stanceLabel(s.stance)}</span>
+      <div class="tile-last" id="last-${a.id}">대기 중</div>
+      <div class="tile-count" id="count-${a.id}">발언 0회</div>
     </article>`;
   }).join('');
+}
+function updateTile(agentId) {
+  const s = states[agentId]; if(!s) return;
+  const tile = document.getElementById('tile-'+agentId);
+  const stanceEl = document.getElementById('stance-'+agentId);
+  const lastEl = document.getElementById('last-'+agentId);
+  const countEl = document.getElementById('count-'+agentId);
+  if(!tile) return;
+  // speaking 하이라이트
+  AGENTS.forEach(a => { const t=document.getElementById('tile-'+a.id); if(t) t.classList.remove('speaking','active'); });
+  if(s.speaking) tile.classList.add('speaking','active');
+  // stance 뱃지
+  if(stanceEl) { stanceEl.className='tile-stance '+s.stance; stanceEl.textContent=stanceLabel(s.stance); }
+  if(lastEl) lastEl.textContent = s.last || '대기 중';
+  if(countEl) countEl.textContent = `발언 ${s.count}회`;
+}
+function updateTugBar() {
+  let pro=0, con=0, neutral=0;
+  AGENTS.forEach(a => {
+    const s = states[a.id]?.stance;
+    if(s==='pro') pro++; else if(s==='con') con++; else neutral++;
+  });
+  const total = AGENTS.length;
+  document.getElementById('tugPro').textContent = `찬성 ${pro}`;
+  document.getElementById('tugCon').textContent = `반대 ${con}`;
+  document.getElementById('tugFillPro').style.width = (pro/total*50)+'%';
+  document.getElementById('tugFillCon').style.width = (con/total*50)+'%';
 }
 
 function showSpotlight(agent, content) {
@@ -275,7 +321,8 @@ function startReplay(type) {
   document.getElementById('cyberStandby').classList.add('hidden');
   document.getElementById('meetingApp').classList.add('active');
   document.getElementById('finalOverlay').classList.remove('show');
-  renderGrid();
+  initGrid();
+  updateTugBar();
   document.getElementById('spotlight').innerHTML='<div class="spot-empty">참가자들이 발언을 준비 중입니다...</div>';
   playNext();
 }
@@ -296,7 +343,8 @@ function playNext() {
   states[t.agent].last=t.content;
   states[t.agent].speaking=true;
 
-  renderGrid();
+  updateTile(t.agent);
+  updateTugBar();
   showSpotlight(t.agent, t.content);
   document.getElementById('mPhase').textContent=phase?.name||'';
   document.getElementById('mTurn').textContent=`T${t.turn} / ${data.turns.length}`;
@@ -307,8 +355,8 @@ function playNext() {
 }
 
 function showFinal() {
-  AGENTS.forEach(a=>{if(states[a.id])states[a.id].speaking=false;});
-  renderGrid();
+  AGENTS.forEach(a=>{if(states[a.id]){states[a.id].speaking=false;updateTile(a.id);}});
+  updateTugBar();
   document.getElementById('foPro').textContent=FS.pro;
   document.getElementById('foCon').textContent=FS.con;
   const r=data.result;
@@ -328,7 +376,10 @@ function skipToEnd(){
     turnIdx++;
   }
   const lastTurn = data.turns[data.turns.length - 1];
-  renderGrid();showSpotlight(lastTurn.agent, lastTurn.content);
+  initGrid();
+  AGENTS.forEach(a=>updateTile(a.id));
+  updateTugBar();
+  showSpotlight(lastTurn.agent, lastTurn.content);
   document.getElementById('mPhase').textContent='결 — 마무리 🏁';
   document.getElementById('mTurn').textContent=`T${lastTurn.turn} / ${data.turns.length}`;
   showFinal();
