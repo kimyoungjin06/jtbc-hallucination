@@ -602,12 +602,20 @@ function DebateMode({ selectedModel, setSelectedModel, onComplete, tts }: {
       {showSettings && (
         <div className="exec-hidden-settings">
           <div className="exec-settings-row">
-            <label>페르소나 팀</label>
+            <label>확정 결과 불러오기</label>
             <div className="exec-filter-btns">
-              <button className={`exec-filter-btn ${currentTeam === "A" ? "active" : ""}`}
-                onClick={() => { setCurrentTeam("A"); debate.setTeam("A"); }}>A 신중론</button>
-              <button className={`exec-filter-btn ${currentTeam === "B" ? "active" : ""}`}
-                onClick={() => { setCurrentTeam("B"); debate.setTeam("B"); }}>B 혁신론</button>
+              <button className="exec-filter-btn" onClick={async () => {
+                try {
+                  const res = await fetch('/api/executor/debate-replay?type=pro');
+                  if (res.ok) { const d = await res.json(); debate.replay(d.debate); }
+                } catch {}
+              }}>찬성 베스트 (4:2)</button>
+              <button className="exec-filter-btn" onClick={async () => {
+                try {
+                  const res = await fetch('/api/executor/debate-replay?type=con');
+                  if (res.ok) { const d = await res.json(); debate.replay(d.debate); }
+                } catch {}
+              }}>반대 베스트 (6:0)</button>
             </div>
           </div>
           <div className="exec-settings-row">
