@@ -360,6 +360,7 @@ function spinPeople() {
       spinning = false;
 
       if (window.speechSynthesis) {
+        speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(
           `중간 평가. ${target.dept} ${target.title} ${target.name}. ${mode}등급, ${GL[mode]}.`
         );

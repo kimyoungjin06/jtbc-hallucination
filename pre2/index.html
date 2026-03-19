@@ -181,7 +181,7 @@ function finish(ev,gc){
   const p=document.getElementById('photo');if(p){p.classList.add('revealed');p.style.borderColor=gc;}
   document.getElementById('kw')?.classList.add('show');
   const sb=document.getElementById('summaryBar');sb.textContent=ev.summary;sb.classList.add('show');
-  if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(`${ev.department} ${ev.title} ${ev.name}. 사전 평가 등급 ${ev.grade}등급, ${GL[ev.grade]}.`);u.lang='ko-KR';u.rate=0.85;speechSynthesis.speak(u);}
+  if(window.speechSynthesis){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(`${ev.department} ${ev.title} ${ev.name}. 사전 평가 등급 ${ev.grade}등급, ${GL[ev.grade]}.`);u.lang='ko-KR';u.rate=0.85;speechSynthesis.speak(u);}
 }
 document.addEventListener('keydown',e=>{
   if(e.key>='1'&&e.key<='6'){e.preventDefault(); exitStandby(); select(parseInt(e.key));}

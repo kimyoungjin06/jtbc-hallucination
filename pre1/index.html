@@ -168,7 +168,7 @@ function reveal() {
         document.getElementById('kw')?.classList.add('show');
         document.getElementById('sm')?.classList.add('show');
         revealed.add(ev.id); spinning=false;
-        if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(`${ev.department} ${ev.title} ${ev.name}. 사전 평가 등급 ${ev.grade}등급, ${GL[ev.grade]}.`);u.lang='ko-KR';u.rate=0.85;speechSynthesis.speak(u);}
+        if(window.speechSynthesis){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(`${ev.department} ${ev.title} ${ev.name}. 사전 평가 등급 ${ev.grade}등급, ${GL[ev.grade]}.`);u.lang='ko-KR';u.rate=0.85;speechSynthesis.speak(u);}
       }
     },160);
   },1800);
