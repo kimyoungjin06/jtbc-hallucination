@@ -404,11 +404,14 @@ function playNext() {
 function showFinal() {
   AGENTS.forEach(a=>{if(states[a.id]){states[a.id].speaking=false;updateTile(a.id);}});
   updateTugBar();
-  document.getElementById('foPro').textContent=FS.pro;
-  document.getElementById('foCon').textContent=FS.con;
   const r=data.result;
+  const proWin = r.pro > r.con;
+  document.getElementById('foPro').textContent = proWin ? FS.pro : '';
+  document.getElementById('foCon').textContent = proWin ? '' : FS.con;
+  document.getElementById('foPro').parentElement.style.display = proWin ? 'block' : 'none';
+  document.getElementById('foCon').parentElement.style.display = proWin ? 'none' : 'block';
   document.getElementById('foResult').textContent=`최종: 찬성 ${r.pro} : 반대 ${r.con}`;
-  document.getElementById('foResult').style.color=r.pro>r.con?'var(--cyan)':'var(--magenta)';
+  document.getElementById('foResult').style.color=proWin?'var(--cyan)':'var(--magenta)';
   document.getElementById('finalOverlay').classList.add('show');
 }
 
