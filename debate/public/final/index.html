@@ -253,7 +253,11 @@ function executeVerdict() {
     if (el) { el.classList.remove('show'); el.textContent = ''; }
   });
 
-  // ── Phase 0 (0s): 암전 페이드인 ──
+  // ── Phase 0 (0s): 암전 페이드인 + TTS 프리페치 시작 ──
+  const evalAudioP = prefetchTTS(v.evaluation || '');
+  const onelinerAudioP = prefetchTTS(v.oneliner || '');
+  const conclusionAudioP = prefetchTTS(`${v.conclusion || ''} ${v.order || ''}`);
+
   photo.src = person.img;
   photo.style.borderColor = 'rgba(255,255,255,0.1)';
   photo.style.setProperty('--glow-color', gc + '60');
@@ -278,11 +282,12 @@ function executeVerdict() {
     const evalEl = document.getElementById('vEval');
     evalEl.classList.add('show');
     const text = v.evaluation || '(평가문 없음)';
-    // TTS 먼저 시작 (비동기)
-    const ttsDone = tryTTS(text);
-    // 타이핑 속도: 글자수 기반으로 TTS 예상 시간에 맞춤 (한글 ~7글자/초 기준)
+    // 프리페치된 오디오 대기 (이미 생성 중이므로 빠름)
+    const evalAudio = await evalAudioP;
+    // TTS 재생 시작 + 타이핑 동시
+    const ttsDone = playTTS(evalAudio, text);
     const estimatedTTSms = Math.max(5000, text.length * 140);
-    const typeSpeed = Math.max(40, Math.floor(estimatedTTSms / text.length));
+    const typeSpeed = Math.max(50, Math.floor(estimatedTTSms / text.length));
     const typeDone = new Promise(r => typeText(evalEl, text, typeSpeed, r));
     await Promise.all([typeDone, ttsDone]);
 
@@ -293,7 +298,8 @@ function executeVerdict() {
     olEl.style.borderColor = gc;
     olEl.style.color = gc;
     olEl.classList.add('show');
-    await tryTTS(v.oneliner || '');
+    const onelinerAudio = await onelinerAudioP;
+    await playTTS(onelinerAudio, v.oneliner || '');
 
     // 판정
     await new Promise(r => vt(r, 500));
@@ -321,8 +327,9 @@ function executeVerdict() {
     concEl.style.color = gc;
     concEl.classList.add('show');
 
-    // TTS 끝날 때까지 기다림
-    await tryTTS(`${v.conclusion || ''} ${v.order || ''}`);
+    // 프리페치된 결론 오디오 재생
+    const conclusionAudio = await conclusionAudioP;
+    await playTTS(conclusionAudio, `${v.conclusion || ''} ${v.order || ''}`);
 
     document.getElementById('vOrder').textContent = v.order || '';
     document.getElementById('vOrder').classList.add('show');
@@ -365,35 +372,40 @@ function stopAllTTS() {
   if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null; }
 }
 
-function tryTTS(text) {
+// TTS 프리페치: 서버에서 오디오를 미리 생성하고 Audio 객체 반환
+async function prefetchTTS(text) {
+  if (!text) return null;
+  try {
+    const res = await fetch((CONFIG.TEAM_VIZ_URL || 'http://localhost:3000') + '/api/executor/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text, provider: 'openai', voiceId: 'onyx',
+        filter: 'executor', production: 'courtdrama',
+        speakingRate: 1.0, flattenIntonation: true,
+      }),
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      return new Audio(url);
+    }
+  } catch {}
+  return null;
+}
+
+// TTS 재생: 프리페치된 오디오가 있으면 바로 재생, 없으면 브라우저 폴백
+function playTTS(prefetched, text) {
   stopAllTTS();
   if (!text) return Promise.resolve();
 
-  return new Promise(async (resolve) => {
-    // 먼저 team_agent_vis 서버 시도
-    try {
-      const res = await fetch((CONFIG.TEAM_VIZ_URL || 'http://localhost:3000') + '/api/executor/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text, provider: 'openai', voiceId: 'onyx',
-          filter: 'executor', production: 'courtdrama',
-          speakingRate: 1.0, flattenIntonation: true,
-        }),
-      });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        currentAudio = new Audio(url);
-        currentAudio.onended = () => resolve();
-        currentAudio.onerror = () => resolve();
-        currentAudio.play().catch(() => resolve());
-        return;
-      }
-    } catch {}
-
-    // 폴백: 브라우저 TTS
-    if (window.speechSynthesis) {
+  return new Promise((resolve) => {
+    if (prefetched) {
+      currentAudio = prefetched;
+      currentAudio.onended = () => resolve();
+      currentAudio.onerror = () => resolve();
+      currentAudio.play().catch(() => resolve());
+    } else if (window.speechSynthesis) {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'ko-KR'; u.rate = 0.95;
       u.onend = () => resolve();
@@ -403,6 +415,12 @@ function tryTTS(text) {
       resolve();
     }
   });
+}
+
+// 호환용 (프리페치 없이 즉시 호출)
+async function tryTTS(text) {
+  const audio = await prefetchTTS(text);
+  return playTTS(audio, text);
 }
 
 /* ═══════════════════════════════════════
