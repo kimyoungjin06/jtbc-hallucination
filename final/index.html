@@ -292,7 +292,7 @@ function executeVerdict() {
       document.getElementById('vGrade').style.color = gc;
       document.getElementById('vGrade').textContent = isFired ? '해고' : '유지';
       document.getElementById('vLabel').style.color = gc;
-      document.getElementById('vLabel').textContent = isFired ? '해고 대상자' : '고용 유지 대상자';
+      document.getElementById('vLabel').textContent = '';
 
       photo.style.borderColor = gc;
       photo.classList.add('glow');
@@ -314,8 +314,8 @@ function executeVerdict() {
     vt(() => {
       const status = document.getElementById('vStatus');
       status.style.color = gc;
-      status.textContent = isFired ? '── 해 고 ──' : '── 고용 유지 ──';
-      status.classList.add('show');
+      status.textContent = '';
+      status.classList.remove('show');
       verdictDone.add(pid);
       verdictBusy = false;
     }, 3500);
