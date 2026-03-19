@@ -244,6 +244,22 @@ function selectMode(m) {
   `;
 }
 
+// 사진 프리로드
+const preloadedImgs = {};
+PEOPLE.forEach(p => { const img = new Image(); img.src = p.img; preloadedImgs[p.id] = img; });
+
+function showPerson(p) {
+  const el = document.getElementById('photoArea');
+  if (el.tagName === 'DIV') {
+    el.outerHTML = `<img class="person-photo" id="photoArea" src="${p.img}">`;
+  } else {
+    el.src = p.img;
+  }
+  document.getElementById('rName').textContent = p.name;
+  document.getElementById('rName').style.color = 'var(--text)';
+  document.getElementById('rDept').textContent = `${p.dept} ${p.title}`;
+}
+
 function spinPeople() {
   if (!mode || spinning || doneSet.has(mode)) return;
   spinning = true;
@@ -253,96 +269,107 @@ function spinPeople() {
   const target = PEOPLE.find(p => p.id === targetId);
   const bw = getBestWorst(targetId);
 
-  const photoArea = document.getElementById('photoArea');
-  const nameEl = document.getElementById('rName');
-  const deptEl = document.getElementById('rDept');
+  // 룰렛 시퀀스 구성: 셔플된 전체 인원 × 여러 바퀴 + 감속 구간 + 타겟 도착
+  const others = PEOPLE.filter(p => p.id !== targetId);
+  const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
 
-  // ── Phase 1: Fast spin (photos + names) ──
-  let si = Math.floor(Math.random() * PEOPLE.length);
-  const fast = setInterval(() => {
-    const p = PEOPLE[si % PEOPLE.length];
-    // Replace placeholder with actual photo element
-    photoArea.outerHTML = `<img class="person-photo" id="photoArea" src="${p.img}">`;
-    nameEl.textContent = p.name;
-    nameEl.style.color = 'var(--text)';
-    deptEl.textContent = `${p.dept} ${p.title}`;
-    si++;
-  }, 110);
+  // Phase 1: 빠른 회전 (3바퀴, 18명)
+  const fast = [];
+  for (let i = 0; i < 3; i++) fast.push(...shuffle(PEOPLE));
 
-  // ── Phase 2: Slow down ──
-  setTimeout(() => {
-    clearInterval(fast);
-    // Build pool ending with target, cycle through ~15 more
-    const others = PEOPLE.filter(p => p.id !== targetId);
-    const pool = [];
-    for (let i = 0; i < 3; i++) pool.push(...others.sort(() => Math.random() - 0.5));
-    pool.push(target);
+  // Phase 2: 감속 회전 (2바퀴, 점점 느려짐)
+  const decel = [];
+  for (let i = 0; i < 2; i++) decel.push(...shuffle(others));
 
-    let pi = 0;
-    const slow = setInterval(() => {
-      const p = pool[pi];
-      const el = document.getElementById('photoArea');
-      if (el.tagName === 'DIV') {
-        el.outerHTML = `<img class="person-photo" id="photoArea" src="${p.img}">`;
-      } else {
-        el.src = p.img;
+  // Phase 3: 최종 접근 (타겟 앞 2~3명 + 타겟)
+  const approach = shuffle(others).slice(0, 3);
+  approach.push(target);
+
+  const sequence = [...fast, ...decel, ...approach];
+  const totalSteps = sequence.length;
+
+  let step = 0;
+
+  function nextStep() {
+    if (step >= totalSteps) {
+      lockOnTarget();
+      return;
+    }
+
+    showPerson(sequence[step]);
+
+    // 이징: 처음 빠르게 → 중간 유지 → 끝 느리게
+    const progress = step / totalSteps;
+    let delay;
+    if (progress < 0.5) {
+      // Phase 1: 빠른 회전 (80~120ms)
+      delay = 80 + Math.random() * 40;
+    } else if (progress < 0.8) {
+      // Phase 2: 감속 시작 (120~350ms, 점점 느려짐)
+      const t = (progress - 0.5) / 0.3; // 0→1
+      delay = 120 + t * t * 230;
+    } else {
+      // Phase 3: 최종 접근 (400~900ms, 크게 느려짐)
+      const t = (progress - 0.8) / 0.2; // 0→1
+      delay = 400 + t * 500;
+    }
+
+    step++;
+    setTimeout(nextStep, delay);
+  }
+
+  function lockOnTarget() {
+    const photo = document.getElementById('photoArea');
+    photo.src = target.img;
+    photo.classList.add('locked');
+    photo.style.borderColor = gc;
+    photo.style.setProperty('--glow', gc + '50');
+    const nameEl = document.getElementById('rName');
+    nameEl.textContent = target.name;
+    nameEl.style.color = gc;
+    nameEl.style.animation = 'pop 0.5s cubic-bezier(0.22,1,0.36,1)';
+    document.getElementById('rDept').textContent = `${target.dept} ${target.title}`;
+
+    // Show result badge
+    setTimeout(() => {
+      document.getElementById('rResult')?.classList.add('show');
+    }, 400);
+
+    // Show best/worst
+    setTimeout(() => {
+      const hl = document.getElementById('hl');
+      document.getElementById('hlBestDim').textContent = DL[bw.best];
+      document.getElementById('hlBestG').textContent = bw.bestGrade;
+      document.getElementById('hlBestG').style.color = GC[bw.bestGrade];
+      document.getElementById('hlWorstDim').textContent = DL[bw.worst];
+      document.getElementById('hlWorstG').textContent = bw.worstGrade;
+      document.getElementById('hlWorstG').style.color = GC[bw.worstGrade];
+      hl?.classList.add('show');
+    }, 900);
+
+    // Summary + TTS
+    setTimeout(() => {
+      const sm = document.getElementById('rSummary');
+      const reason = mode === 'F'
+        ? `${target.name} ${target.title}: 중간 평가 기준 ${DL[bw.worst]} 최하위 (${bw.worstGrade}등급). 해고 위기 대상자로 지정.`
+        : `${target.name} ${target.title}: 중간 평가 기준 ${DL[bw.best]} 최고 (${bw.bestGrade}등급). 최적 인재로 확정.`;
+      sm.textContent = reason;
+      sm.classList.add('show');
+
+      doneSet.add(mode);
+      spinning = false;
+
+      if (window.speechSynthesis) {
+        const u = new SpeechSynthesisUtterance(
+          `중간 평가. ${target.dept} ${target.title} ${target.name}. ${mode}등급, ${GL[mode]}.`
+        );
+        u.lang = 'ko-KR'; u.rate = 0.85;
+        speechSynthesis.speak(u);
       }
-      nameEl.textContent = p.name;
-      deptEl.textContent = `${p.dept} ${p.title}`;
-      pi++;
+    }, 1500);
+  }
 
-      if (pi >= pool.length) {
-        clearInterval(slow);
-        // ── Lock on target ──
-        const photo = document.getElementById('photoArea');
-        photo.src = target.img;
-        photo.classList.add('locked');
-        photo.style.borderColor = gc;
-        photo.style.setProperty('--glow', gc + '50');
-        nameEl.textContent = target.name;
-        nameEl.style.animation = 'pop 0.5s cubic-bezier(0.22,1,0.36,1)';
-        deptEl.textContent = `${target.dept} ${target.title}`;
-
-        // Show result badge
-        setTimeout(() => {
-          document.getElementById('rResult')?.classList.add('show');
-        }, 300);
-
-        // Show best/worst
-        setTimeout(() => {
-          const hl = document.getElementById('hl');
-          document.getElementById('hlBestDim').textContent = DL[bw.best];
-          document.getElementById('hlBestG').textContent = bw.bestGrade;
-          document.getElementById('hlBestG').style.color = GC[bw.bestGrade];
-          document.getElementById('hlWorstDim').textContent = DL[bw.worst];
-          document.getElementById('hlWorstG').textContent = bw.worstGrade;
-          document.getElementById('hlWorstG').style.color = GC[bw.worstGrade];
-          hl?.classList.add('show');
-        }, 700);
-
-        // Summary
-        setTimeout(() => {
-          const sm = document.getElementById('rSummary');
-          const reason = mode === 'F'
-            ? `${target.name} ${target.title}: 중간 평가 기준 ${DL[bw.worst]} 최하위 (${bw.worstGrade}등급). 해고 위기 대상자로 지정.`
-            : `${target.name} ${target.title}: 중간 평가 기준 ${DL[bw.best]} 최고 (${bw.bestGrade}등급). 최적 인재로 확정.`;
-          sm.textContent = reason;
-          sm.classList.add('show');
-
-          doneSet.add(mode);
-          spinning = false;
-
-          if (window.speechSynthesis) {
-            const u = new SpeechSynthesisUtterance(
-              `중간 평가. ${target.dept} ${target.title} ${target.name}. ${mode}등급, ${GL[mode]}.`
-            );
-            u.lang = 'ko-KR'; u.rate = 0.85;
-            speechSynthesis.speak(u);
-          }
-        }, 1200);
-      }
-    }, 180 + pi * 12);
-  }, 2200);
+  nextStep();
 }
 
 /* ── Keyboard ── */
