@@ -250,25 +250,39 @@ CyberBG.init({ scores: CONFIG.PRE_SCORES||{}, people: [
   {id:'p4',name:'허성범',title:'인턴',dept:'인사팀',img:'../img/heosung.png'},
 ], phase:'mid' });
 
-function getStance(agent,content) {
-  if(content.includes('찬성')&&!content.includes('반대')) return 'pro';
-  if(content.includes('반대')) return 'con';
-  if(content.includes('흔들')||content.includes('유보')) return 'neutral';
-  if(states[agent]?.stance) return states[agent].stance;
+// stance: 줄다리기 집계용 (pro/con만, 흔들림은 이전 입장 유지)
+// display: 타일 뱃지용 (흔들림 표시)
+function getStance(agent, content) {
+  const prev = states[agent]?.stance;
+  const prevDisplay = states[agent]?.display;
+  if(content.includes('찬성') && !content.includes('반대')) return { stance:'pro', display:'pro' };
+  if(content.includes('반대')) return { stance:'con', display:'con' };
+  if(content.includes('흔들') || content.includes('유보')) return { stance: prev || 'neutral', display:'shaken' };
+  // 명시적 입장 없으면 이전 유지
+  if(prev) return { stance: prev, display: prevDisplay || prev };
   const a = AGENTS.find(x=>x.id===agent);
-  return a?.start==='찬성' ? 'pro' : a?.start==='반대' ? 'con' : 'neutral';
+  const init = a?.start==='찬성' ? 'pro' : a?.start==='반대' ? 'con' : 'neutral';
+  return { stance: init, display: init };
 }
-function stanceLabel(s) { return s==='pro'?'찬성':s==='con'?'반대':'중립'; }
+function stanceLabel(s) {
+  if(s==='shaken') return '흔들림';
+  return s==='pro'?'찬성':s==='con'?'반대':'중립';
+}
+function stanceClass(s) {
+  if(s==='shaken') return 'neutral';
+  return s;
+}
 
 function initGrid() {
   document.getElementById('meetingGrid').innerHTML = AGENTS.map(a => {
-    const s = states[a.id] || { stance: a.start==='찬성'?'pro':a.start==='반대'?'con':'neutral', count:0, last:'', speaking:false };
+    const s = states[a.id] || { stance: a.start==='찬성'?'pro':a.start==='반대'?'con':'neutral', display: a.start==='찬성'?'pro':a.start==='반대'?'con':'neutral', count:0, last:'', speaking:false };
+    const disp = s.display || s.stance;
     return `<article class="meeting-tile" id="tile-${a.id}">
       <div class="tile-head">
         <div class="tile-avatar">${a.avatar}</div>
         <div><div class="tile-name">${a.id}</div><div class="tile-role">${a.role}</div></div>
       </div>
-      <span class="tile-stance ${s.stance}" id="stance-${a.id}">${stanceLabel(s.stance)}</span>
+      <span class="tile-stance ${stanceClass(disp)}" id="stance-${a.id}">${stanceLabel(disp)}</span>
       <div class="tile-last" id="last-${a.id}">대기 중</div>
       <div class="tile-count" id="count-${a.id}">발언 0회</div>
     </article>`;
@@ -284,8 +298,9 @@ function updateTile(agentId) {
   // speaking 하이라이트
   AGENTS.forEach(a => { const t=document.getElementById('tile-'+a.id); if(t) t.classList.remove('speaking','active'); });
   if(s.speaking) tile.classList.add('speaking','active');
-  // stance 뱃지
-  if(stanceEl) { stanceEl.className='tile-stance '+s.stance; stanceEl.textContent=stanceLabel(s.stance); }
+  // stance 뱃지 (display 상태 사용 — 흔들림 표시)
+  const disp = s.display || s.stance;
+  if(stanceEl) { stanceEl.className='tile-stance '+stanceClass(disp); stanceEl.textContent=stanceLabel(disp); }
   if(lastEl) lastEl.textContent = s.last || '대기 중';
   if(countEl) countEl.textContent = `발언 ${s.count}회`;
 }
@@ -306,12 +321,12 @@ let typeTimer = null;
 function showSpotlight(agent, content, onDone) {
   if(typeTimer) { clearInterval(typeTimer); typeTimer=null; }
   const a = AGENTS.find(x=>x.id===agent);
-  const s = states[agent]?.stance || 'neutral';
+  const disp = states[agent]?.display || states[agent]?.stance || 'neutral';
   document.getElementById('spotlight').innerHTML = `
     <div class="spot-meta">
       <div class="spot-avatar">${a?.avatar||'?'}</div>
       <div><div class="spot-name">${agent}</div><div class="spot-role">${a?.role||''}</div></div>
-      <span class="spot-stance ${s}">${stanceLabel(s)}</span>
+      <span class="spot-stance ${stanceClass(disp)}">${stanceLabel(disp)}</span>
     </div>
     <div class="spot-text" id="spotText"><span class="cursor"></span></div>
   `;
@@ -342,7 +357,10 @@ function showSpotlight(agent, content, onDone) {
 function startReplay(type) {
   data = type==='pro' ? INLINE_PRO : INLINE_CON;
   turnIdx=0; paused=false;
-  AGENTS.forEach(a => { states[a.id]={stance:a.start==='찬성'?'pro':a.start==='반대'?'con':'neutral',count:0,last:'',speaking:false}; });
+  AGENTS.forEach(a => {
+    const init = a.start==='찬성'?'pro':a.start==='반대'?'con':'neutral';
+    states[a.id]={stance:init, display:init, count:0, last:'', speaking:false};
+  });
   document.getElementById('selectHub').classList.add('hidden');
   document.getElementById('cyberStandby').classList.add('hidden');
   document.getElementById('meetingApp').classList.add('active');
@@ -362,9 +380,10 @@ function playNext() {
   // 모든 타일 speaking 해제
   AGENTS.forEach(a=>{if(states[a.id])states[a.id].speaking=false;});
   // 현재 발언자
-  const stance=getStance(t.agent,t.content);
-  if(!states[t.agent])states[t.agent]={stance:'neutral',count:0,last:'',speaking:false};
-  states[t.agent].stance=stance;
+  const { stance, display } = getStance(t.agent, t.content);
+  if(!states[t.agent])states[t.agent]={stance:'neutral',display:'neutral',count:0,last:'',speaking:false};
+  states[t.agent].stance = stance;
+  states[t.agent].display = display;
   states[t.agent].count++;
   states[t.agent].last=t.content;
   states[t.agent].speaking=true;
@@ -398,9 +417,9 @@ function toggleSpeed(){speed=speed>=3?1:speed+1;document.getElementById('speedBt
 function skipToEnd(){
   clearTimeout(timer);
   while(turnIdx<data.turns.length){
-    const t=data.turns[turnIdx];const s=getStance(t.agent,t.content);
-    if(!states[t.agent])states[t.agent]={stance:'neutral',count:0,last:'',speaking:false};
-    states[t.agent].stance=s;states[t.agent].count++;states[t.agent].last=t.content;states[t.agent].speaking=false;
+    const t=data.turns[turnIdx];const{stance:st,display:dp}=getStance(t.agent,t.content);
+    if(!states[t.agent])states[t.agent]={stance:'neutral',display:'neutral',count:0,last:'',speaking:false};
+    states[t.agent].stance=st;states[t.agent].display=dp;states[t.agent].count++;states[t.agent].last=t.content;states[t.agent].speaking=false;
     turnIdx++;
   }
   const lastTurn = data.turns[data.turns.length - 1];
