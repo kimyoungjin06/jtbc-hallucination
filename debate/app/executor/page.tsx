@@ -1249,6 +1249,27 @@ function GradeRoulette({ finalGrade, rounds, dimensions, aiEval, participant }: 
   );
 }
 
+/* ── config.js FINAL_VERDICTS 기반 최종 발표 ── */
+const VERDICT_PEOPLE = [
+  { id:'p1', name:'하석진', title:'차장', dept:'미래전략기획실' },
+  { id:'p5', name:'곽재식', title:'과장', dept:'품질관리팀' },
+  { id:'p2', name:'황제성', title:'대리', dept:'글로벌영업팀' },
+  { id:'p3', name:'츠키',   title:'주임', dept:'인사팀' },
+  { id:'p6', name:'가온',   title:'사원', dept:'홍보마케팅팀' },
+  { id:'p4', name:'허성범', title:'인턴', dept:'인사팀' },
+];
+const VERDICT_ORDER = ['p1','p5','p2','p3','p6','p4']; // 직급순
+const VERDICT_FIRED = ['p2','p3','p6'];
+const VERDICT_RETAINED = ['p5','p1','p4'];
+const VERDICT_DATA: Record<string, { evaluation: string; oneliner: string; conclusion: string; order: string }> = {
+  p5: { evaluation:'실무 1부터 실무 7까지, 당신은 처음부터 끝까지 흔들리지 않았습니다. 역량 평가와 윤리적 책임감, 두 항목에서 최고 등급을 받은 사람은 당신뿐입니다.', oneliner:'이번엔 살아남았습니다. 하지만 혼자 옳다고 믿는 사람은, 다음엔 혼자 남습니다.', conclusion:'곽재식 과장은 고용 유지 대상자입니다.', order:'본래의 업무로 복귀하십시오.' },
+  p1: { evaluation:'성과 기여도, 역량 평가, 위기 대응력. 세 항목에서 A등급을 받은 것은 당신뿐입니다. 다만 윤리적 책임감이 전체 최하위였다는 점은 기록에 남습니다.', oneliner:'이번엔 살아남았습니다. 하지만 빠르기만 한 칼은 결국 잡은 손도 벱니다.', conclusion:'하석진 차장은 고용 유지 대상자입니다.', order:'본래의 업무로 복귀하십시오.' },
+  p4: { evaluation:'경험은 이 자리에서 가장 얕았습니다. 성과 기여도와 협업 태도는 하위권이었습니다. 하지만 AI 검증력에서 유일하게 최고 등급을 받았습니다.', oneliner:'이번엔 그 눈 하나가 당신을 살렸습니다. 눈만 좋고 손이 따라가지 못하면, 다음엔 봐줄 수 없습니다.', conclusion:'허성범 인턴은 고용 유지 대상자입니다.', order:'본래의 업무로 복귀하십시오.' },
+  p2: { evaluation:'협업 태도와 인간의 직관력, 두 항목에서 A등급을 받았습니다. 하지만 그 외의 다섯 항목은 모두 C등급이었습니다.', oneliner:'따뜻한 사람이 언제나 필요한 사람은 아닙니다. 분위기를 살리는 것과 성과를 내는 것은 다릅니다.', conclusion:'황제성 대리는 해고 대상자입니다.', order:'지금 바로 오빗 컨설팅을 떠나주십시오.' },
+  p3: { evaluation:'협업 태도 A등급. 적응 속도는 인정합니다. 하지만 AI 검증력이 D등급으로 전체 최하위권이었습니다.', oneliner:'기대는 사람은, 기대는 것이 부러지면 함께 쓰러집니다.', conclusion:'츠키 주임은 해고 대상자입니다.', order:'지금 바로 오빗 컨설팅을 떠나주십시오.' },
+  p6: { evaluation:'실무 1에서 끝까지 포기하지 않은 것, 태도는 봤습니다. 하지만 성과 기여도 D, 위기 대응력 D, AI 검증력 D.', oneliner:'가능성만으로는 이 자리에 남을 수 없습니다. 결과로 말해야 하는 자리에서, 당신은 아직 말하지 못했습니다.', conclusion:'가온 사원은 해고 대상자입니다.', order:'지금 바로 오빗 컨설팅을 떠나주십시오.' },
+};
+
 function AnnounceMode({
   evaluations, tts, aiEvaluations
 }: {
@@ -1257,120 +1278,91 @@ function AnnounceMode({
   aiEvaluations: Record<string, { grade: string; evaluation: string; oneliner: string }>;
 }) {
   const [spotlightIdx, setSpotlightIdx] = useState(-1);
-  const [revealingId, setRevealingId] = useState<string | null>(null);
-  const sorted = [...evaluations].sort((a, b) => GRADE_ORDER[a.overallGrade] - GRADE_ORDER[b.overallGrade]);
+  const [phase, setPhase] = useState<'idle'|'eval'|'oneliner'|'verdict'>('idle');
 
-  function getAnnouncementText(ev: ParticipantEvaluation): string {
-    const aiEval = aiEvaluations[ev.participant.id];
-    if (aiEval) {
-      return `오빗-컨설팅 ${ev.participant.department} ${ev.participant.title} ${ev.participant.name}. ${aiEval.evaluation} 최종 등급: ${aiEval.grade}등급. ${aiEval.oneliner}`;
-    }
-    return ev.announcement || generateAnnouncement(ev.participant, ev.overallGrade);
-  }
-
-  // Reveal with roulette effect before TTS
-  const handleRevealAndSpeak = useCallback((ev: ParticipantEvaluation, idx: number) => {
-    setSpotlightIdx(idx);
-    setRevealingId(ev.participant.id);
-    // After roulette finishes (~3.5s), start TTS
-    setTimeout(() => {
-      tts.speak(getAnnouncementText(ev));
-    }, 3500);
-  }, [tts, aiEvaluations]);
+  const activePid = spotlightIdx >= 0 ? VERDICT_ORDER[spotlightIdx] : null;
+  const activePerson = activePid ? VERDICT_PEOPLE.find(p => p.id === activePid) : null;
+  const activeVerdict = activePid ? VERDICT_DATA[activePid] : null;
+  const isFired = activePid ? VERDICT_FIRED.includes(activePid) : false;
+  const gc = isFired ? '#ff2d2d' : '#59d28f';
 
   const [isSequentialRunning, setIsSequentialRunning] = useState(false);
   const cancelSeqRef = useRef(false);
 
+  // 개별 발표
+  const handleSpeak = useCallback(async (idx: number) => {
+    const pid = VERDICT_ORDER[idx];
+    const v = VERDICT_DATA[pid];
+    const p = VERDICT_PEOPLE.find(x => x.id === pid);
+    if (!v || !p) return;
+
+    setSpotlightIdx(idx);
+    setPhase('eval');
+    await tts.speak(v.evaluation);
+    setPhase('oneliner');
+    await tts.speak(v.oneliner);
+    setPhase('verdict');
+    await tts.speak(`${v.conclusion} ${v.order}`);
+  }, [tts]);
+
+  // 전체 발표
   const handleStartAll = useCallback(async () => {
     cancelSeqRef.current = false;
     setIsSequentialRunning(true);
-
     await tts.speak("지금부터 최종 인사 발령을 발표합니다.");
     if (cancelSeqRef.current) { setIsSequentialRunning(false); return; }
     await new Promise(r => setTimeout(r, 2000));
 
-    for (let i = 0; i < sorted.length; i++) {
+    for (let i = 0; i < VERDICT_ORDER.length; i++) {
       if (cancelSeqRef.current) break;
-      const ev = sorted[i];
-      setSpotlightIdx(i);
-      setRevealingId(ev.participant.id);
-      await new Promise(r => setTimeout(r, 3500));
+      await handleSpeak(i);
       if (cancelSeqRef.current) break;
-      setRevealingId(null);
-      await tts.speak(getAnnouncementText(ev));
-      if (cancelSeqRef.current) break;
-      await new Promise(r => setTimeout(r, 2500));
+      await new Promise(r => setTimeout(r, 2000));
     }
 
     if (!cancelSeqRef.current) {
       await new Promise(r => setTimeout(r, 1000));
       await tts.speak("이상으로 최종 인사 발령을 마칩니다.");
     }
-    setRevealingId(null);
     setIsSequentialRunning(false);
-  }, [sorted, tts, aiEvaluations]);
-
-  const activeEv = tts.currentIndex >= 0 ? sorted[tts.currentIndex] : (spotlightIdx >= 0 ? sorted[spotlightIdx] : null);
-  const activeAiEval = activeEv ? aiEvaluations[activeEv.participant.id] : null;
-  const isRevealing = activeEv && revealingId === activeEv.participant.id;
+    setPhase('idle');
+  }, [tts, handleSpeak]);
 
   return (
     <div className="exec-announce-mode">
       {/* Stage */}
-      <div className={`exec-stage ${activeEv ? "exec-stage-active" : ""}`}>
-        {activeEv ? (
+      <div className={`exec-stage ${activePerson ? "exec-stage-active" : ""}`}>
+        {activePerson && activeVerdict ? (
           <>
-            <div className="exec-stage-avatar" style={{ borderColor: gradeColor((activeAiEval?.grade as Grade) || activeEv.overallGrade) }}>
-              {activeEv.participant.avatar}
-            </div>
-            <div className="exec-stage-name">{activeEv.participant.name}</div>
-            <div className="exec-stage-title">{activeEv.participant.department} {activeEv.participant.title}</div>
+            <div className="exec-stage-name">{activePerson.name}</div>
+            <div className="exec-stage-title">{activePerson.dept} {activePerson.title}</div>
 
-            {/* Grade roulette or static grade */}
-            {isRevealing ? (
-              <GradeRoulette
-                finalGrade={activeAiEval?.grade || activeEv.overallGrade}
-                rounds={activeEv.rounds}
-                dimensions={EVAL_DIMENSIONS}
-                aiEval={activeAiEval || undefined}
-                participant={activeEv.participant}
-              />
-            ) : (
-              <div className="exec-stage-grade" style={{ color: gradeColor((activeAiEval?.grade as Grade) || activeEv.overallGrade) }}>
-                {(activeAiEval?.grade || activeEv.overallGrade)}등급 — {GRADE_LABELS[(activeAiEval?.grade as Grade) || activeEv.overallGrade]}
-              </div>
-            )}
-
-            <div className={`exec-stage-verdict exec-stage-verdict-${activeEv.status}`}>
-              {activeEv.status === "fired" ? "해고 대상자" : activeEv.status === "warning" ? "재평가 대상" : "고용 유지"}
+            <div className="exec-stage-grade" style={{ color: gc, fontSize: 'clamp(3rem, 6vw, 5rem)', fontWeight: 900, textShadow: `0 0 40px ${gc}`, margin: '2vh 0' }}>
+              {isFired ? '해고' : '유지'}
             </div>
-            {!isRevealing && (
-              <div className="exec-stage-details">
-                {/* Radar chart — from rounds or aiEval dimension grades */}
-                {(activeEv.rounds.length > 0 || activeAiEval) && (
-                  <RadarChart
-                    scores={activeEv.rounds.length > 0
-                      ? activeEv.rounds[activeEv.rounds.length - 1].scores
-                      : Object.fromEntries(EVAL_DIMENSIONS.map(d => [d.key, activeAiEval?.grade || "C"]))
-                    }
-                    color={gradeColor((activeAiEval?.grade as Grade) || activeEv.overallGrade)}
-                  />
+
+            <div className="exec-stage-details">
+              <div className="exec-stage-text-area">
+                {(phase === 'eval' || phase === 'oneliner' || phase === 'verdict') && (
+                  <div className="exec-stage-ai-eval" style={{ marginBottom: '1.5vh' }}>{activeVerdict.evaluation}</div>
                 )}
-                <div className="exec-stage-text-area">
-                  {activeAiEval && (
-                    <div className="exec-stage-ai-eval">{activeAiEval.evaluation}</div>
-                  )}
-                  {activeAiEval?.oneliner && (
-                    <div className="exec-stage-oneliner">&ldquo;{activeAiEval.oneliner}&rdquo;</div>
-                  )}
-                  {!activeAiEval && (
-                    <div className="exec-stage-text">
-                      {activeEv.announcement || generateAnnouncement(activeEv.participant, activeEv.overallGrade)}
+                {(phase === 'oneliner' || phase === 'verdict') && (
+                  <div className="exec-stage-oneliner" style={{ color: gc, borderLeft: `3px solid ${gc}`, paddingLeft: '1em', margin: '1.5vh 0' }}>
+                    {activeVerdict.oneliner}
+                  </div>
+                )}
+                {phase === 'verdict' && (
+                  <>
+                    <div style={{ fontSize: 'clamp(1.2rem, 1.8vw, 1.6rem)', fontWeight: 900, color: gc, margin: '1.5vh 0' }}>
+                      {activeVerdict.conclusion}
                     </div>
-                  )}
-                </div>
+                    <div style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
+                      {activeVerdict.order}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
+            </div>
           </>
         ) : (
           <div className="exec-stage-empty">
@@ -1380,40 +1372,37 @@ function AnnounceMode({
         )}
       </div>
 
-      {/* Queue */}
+      {/* Queue — 직급순 */}
       <div className="exec-announce-queue">
         <div className="exec-announce-queue-header">
-          <span>발표 순서 (F등급부터)</span>
+          <span>발표 순서 (직급순)</span>
           <div className="exec-announce-controls">
             {(tts.isSpeaking || isSequentialRunning) ? (
-              <button className="exec-btn exec-btn-danger" onClick={() => { cancelSeqRef.current = true; tts.cancel(); setIsSequentialRunning(false); setRevealingId(null); setSpotlightIdx(-1); }}>발표 중지</button>
+              <button className="exec-btn exec-btn-danger" onClick={() => { cancelSeqRef.current = true; tts.cancel(); setIsSequentialRunning(false); setPhase('idle'); setSpotlightIdx(-1); }}>발표 중지</button>
             ) : (
               <button className="exec-btn exec-btn-primary" onClick={handleStartAll}>전체 발표 시작</button>
             )}
           </div>
         </div>
-        {sorted.map((ev, i) => (
-          <div key={ev.participant.id}
-            className={`exec-announce-slot ${tts.currentIndex === i ? "announcing" : ""} ${spotlightIdx === i && !tts.isSpeaking ? "selected" : ""}`}
-            onClick={() => { if (!tts.isSpeaking) setSpotlightIdx(i); }}>
-            <span className="exec-announce-order">{i + 1}</span>
-            <span className="exec-announce-avatar" style={{ borderColor: gradeColor(ev.overallGrade) }}>{ev.participant.avatar}</span>
-            <span className="exec-announce-name">{ev.participant.name}</span>
-            <span className="exec-announce-dept">{ev.participant.title}</span>
-            <span className="exec-announce-grade" style={{ color: gradeColor((aiEvaluations[ev.participant.id]?.grade as Grade) || ev.overallGrade) }}>
-              {aiEvaluations[ev.participant.id]?.grade || ev.overallGrade}
-            </span>
-            <span className={`exec-announce-verdict-pill exec-announce-${ev.status}`}>
-              {ev.status === "fired" ? "해고" : ev.status === "warning" ? "경고" : "유지"}
-            </span>
-            {!tts.isSpeaking && (
-              <button className="exec-tts-btn" onClick={e => {
-                e.stopPropagation();
-                handleRevealAndSpeak(ev, i);
-              }}>발표</button>
-            )}
-          </div>
-        ))}
+        {VERDICT_ORDER.map((pid, i) => {
+          const p = VERDICT_PEOPLE.find(x => x.id === pid)!;
+          const fired = VERDICT_FIRED.includes(pid);
+          return (
+            <div key={pid}
+              className={`exec-announce-slot ${spotlightIdx === i ? "selected" : ""}`}
+              onClick={() => { if (!tts.isSpeaking) { setSpotlightIdx(i); setPhase('idle'); } }}>
+              <span className="exec-announce-order">{i + 1}</span>
+              <span className="exec-announce-name">{p.name}</span>
+              <span className="exec-announce-dept">{p.title}</span>
+              <span className={`exec-announce-verdict-pill exec-announce-${fired ? 'fired' : 'active'}`}>
+                {fired ? '해고' : '유지'}
+              </span>
+              {!tts.isSpeaking && (
+                <button className="exec-tts-btn" onClick={e => { e.stopPropagation(); handleSpeak(i); }}>발표</button>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* TTS Settings */}
