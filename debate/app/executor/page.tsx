@@ -1550,16 +1550,14 @@ export default function ExecutorPage() {
 
   return (
     <main className="exec-shell">
+      <BrandingBar />
       {showHeader && (
-        <>
-          <BrandingBar />
-          <div className="exec-header-bar">
-            <ModeTabBar mode={mode} onChange={setMode} debateCompleted={debateCompleted} evalCount={evaluations.length} ttsActive={tts.isSpeaking} />
-            <div className="exec-header-actions">
-              <Link className="exec-action-btn" href="/">HOME</Link>
-            </div>
+        <div className="exec-header-bar">
+          <ModeTabBar mode={mode} onChange={setMode} debateCompleted={debateCompleted} evalCount={evaluations.length} ttsActive={tts.isSpeaking} />
+          <div className="exec-header-actions">
+            <Link className="exec-action-btn" href="/">HOME</Link>
           </div>
-        </>
+        </div>
       )}
 
       <div className="exec-content">
