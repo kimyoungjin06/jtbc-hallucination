@@ -90,13 +90,12 @@ body { background: var(--bg); color: #e0e0e0; font-family: 'Noto Sans KR', sans-
 </head>
 <body class="cyber">
 <script>
-// iframe 안에서 로드되면 top-bar 숨기고 padding 조정
 if (window.self !== window.top) {
-  document.documentElement.style.setProperty('--iframe-mode', '1');
   document.addEventListener('DOMContentLoaded', () => {
     const bar = document.querySelector('.top-bar');
     if (bar) bar.style.display = 'none';
-    document.querySelector('.cyber-main').style.paddingTop = '0';
+    const cm = document.querySelector('.cyber-main');
+    if (cm) cm.style.paddingTop = '0';
   });
 }
 </script>
@@ -274,13 +273,17 @@ function executeVerdict() {
   // ── Phase 1 (1s): 인물 등장 ──
   vt(() => topEl.classList.add('show'), 1000);
 
-  // ── Phase 2 (2.5s): 평가문 타이핑 + TTS (둘 다 끝나면 다음) ──
+  // ── Phase 2 (2.5s): TTS 먼저 시작, 타이핑은 TTS 길이에 맞춰 속도 조절 ──
   vt(async () => {
     const evalEl = document.getElementById('vEval');
     evalEl.classList.add('show');
-    // 타이핑과 TTS 병렬, 둘 다 끝나면 다음
-    const typeDone = new Promise(r => typeText(evalEl, v.evaluation || '(평가문 없음)', 35, r));
-    const ttsDone = tryTTS(v.evaluation || '');
+    const text = v.evaluation || '(평가문 없음)';
+    // TTS 먼저 시작 (비동기)
+    const ttsDone = tryTTS(text);
+    // 타이핑 속도: 글자수 기반으로 TTS 예상 시간에 맞춤 (한글 ~7글자/초 기준)
+    const estimatedTTSms = Math.max(5000, text.length * 140);
+    const typeSpeed = Math.max(40, Math.floor(estimatedTTSms / text.length));
+    const typeDone = new Promise(r => typeText(evalEl, text, typeSpeed, r));
     await Promise.all([typeDone, ttsDone]);
 
     // 일침
