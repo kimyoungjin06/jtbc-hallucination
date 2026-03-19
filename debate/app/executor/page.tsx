@@ -1563,9 +1563,7 @@ function AnnounceMode({
    ══════════════════════════════════════ */
 
 export default function ExecutorPage() {
-  const [mode, setMode] = useState<AppMode>(
-    typeof window !== 'undefined' && window.location.hash === '#announce' ? 'announce' : 'debate'
-  );
+  const [mode, setMode] = useState<AppMode>("debate");
   const [selectedModel, setSelectedModel] = useState("gpt-5.4");
   const [debateComplete, setDebateComplete] = useState(false);
   const [aiEvaluations, setAiEvaluations] = useState<Record<string, { grade: string; evaluation: string; oneliner: string }>>({});
@@ -1590,9 +1588,15 @@ export default function ExecutorPage() {
     a.click(); URL.revokeObjectURL(url);
   }, [evaluations, observations]);
 
-  const [showHeader, setShowHeader] = useState(
-    typeof window !== 'undefined' && window.location.hash === '#announce'
-  );
+  const [showHeader, setShowHeader] = useState(false);
+
+  // #announce 해시로 접속 시 자동 전환
+  useEffect(() => {
+    if (window.location.hash === '#announce') {
+      setMode('announce');
+      setShowHeader(true);
+    }
+  }, []);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
