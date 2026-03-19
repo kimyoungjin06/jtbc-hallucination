@@ -228,7 +228,7 @@ function typeText(el, text, speed, onDone) {
   }, speed);
 }
 
-function executeVerdict() {
+async function executeVerdict() {
   if (verdictIdx < 0 || verdictBusy) return;
   const pid = VERDICT_ORDER[verdictIdx];
   if (verdictDone.has(pid)) return;
@@ -243,8 +243,28 @@ function executeVerdict() {
   const topEl = document.getElementById('verdictTop');
   const photo = document.getElementById('vPhoto');
 
-  // ── Reset ──
-  overlay.classList.remove('visible');
+  // 이전 타이머/TTS 정리
+  verdictTimers.forEach(clearTimeout);
+  verdictTimers.length = 0;
+  if (evalTypeTimer) { clearInterval(evalTypeTimer); evalTypeTimer = null; }
+  stopAllTTS();
+
+  // 이전 오버레이가 열려있으면 먼저 닫기
+  const wasOpen = overlay.classList.contains('show');
+  if (wasOpen) {
+    overlay.classList.remove('visible');
+    overlay.classList.remove('show');
+  }
+
+  // ── TTS 프리페치 시작 (닫기 대기 중에도 서버 요청) ──
+  const evalAudioP = prefetchTTS(v.evaluation || '');
+  const onelinerAudioP = prefetchTTS(v.oneliner || '');
+  const conclusionAudioP = prefetchTTS(`${v.conclusion || ''} ${v.order || ''}`);
+
+  // 닫기 완료 대기
+  await new Promise(r => setTimeout(r, wasOpen ? 600 : 50));
+
+  // ── Reset 내용 ──
   topEl.classList.remove('show');
   photo.classList.remove('glow');
   document.getElementById('vGradeBadge').style.display = 'none';
@@ -253,11 +273,7 @@ function executeVerdict() {
     if (el) { el.classList.remove('show'); el.textContent = ''; }
   });
 
-  // ── Phase 0 (0s): 암전 페이드인 + TTS 프리페치 시작 ──
-  const evalAudioP = prefetchTTS(v.evaluation || '');
-  const onelinerAudioP = prefetchTTS(v.oneliner || '');
-  const conclusionAudioP = prefetchTTS(`${v.conclusion || ''} ${v.order || ''}`);
-
+  // ── Phase 0: 새 사람으로 암전 페이드인 ──
   photo.src = person.img;
   photo.style.borderColor = 'rgba(255,255,255,0.1)';
   photo.style.setProperty('--glow-color', gc + '60');
@@ -266,11 +282,6 @@ function executeVerdict() {
   document.getElementById('vDept').textContent = `${person.dept} ${person.title}`;
   overlay.classList.add('show');
   requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visible')));
-
-  // 이전 타이머 정리
-  verdictTimers.forEach(clearTimeout);
-  verdictTimers.length = 0;
-  stopAllTTS();
 
   function vt(fn, ms) { verdictTimers.push(setTimeout(fn, ms)); }
 
