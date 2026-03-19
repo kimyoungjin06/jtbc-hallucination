@@ -96,20 +96,14 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
     </a>
   </div>
 
-  <div style="margin-top:3vh;border-top:1px solid rgba(255,255,255,0.06);padding-top:3vh;width:100%;display:flex;justify-content:center">
-    <div class="cards">
+  <!-- 확장 메뉴: Alt+S 토글 / 서버 감지 시 자동 표시 -->
+  <div id="extSection" style="display:none;margin-top:3vh;border-top:1px solid rgba(255,255,255,0.06);padding-top:3vh;width:100%">
+    <div class="cards" style="justify-content:center">
       <a class="card accent-magenta" href="replay/index.html">
         <div class="card-icon" style="font-size:2rem">AI</div>
         <div class="card-title">AI 토론 재생</div>
-        <div class="card-desc">실무⑤ 토론 배틀<br>정적 재생 (서버 불필요)</div>
+        <div class="card-desc">실무⑤ 토론 배틀<br>정적 재생</div>
       </a>
-    </div>
-  </div>
-
-  <!-- 서버 전용 메뉴 (Alt+S로 토글) -->
-  <div id="serverSection" style="display:none;margin-top:2vh;border-top:1px solid rgba(255,255,255,0.04);padding-top:2vh;width:100%;text-align:center">
-    <p style="font-size:0.75rem;color:rgba(255,255,255,0.2);margin-bottom:1vh">서버 전용 (Alt+S)</p>
-    <div class="cards" style="justify-content:center">
       <a class="card" href="javascript:void(0)" onclick="openDebate()" id="debateCard">
         <div class="card-icon" style="font-size:2rem">EX</div>
         <div class="card-title">토론 서버</div>
@@ -124,11 +118,11 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
 const VIZ_URL = (typeof CONFIG !== 'undefined' && CONFIG.TEAM_VIZ_URL) || 'http://localhost:3000';
 function openDebate() { window.open(VIZ_URL + '/executor', '_blank'); }
 
-// Alt+S: 서버 전용 메뉴 토글
+// Alt+S: 확장 메뉴 토글
 document.addEventListener('keydown', e => {
   if(e.altKey && e.key.toLowerCase()==='s') {
     e.preventDefault();
-    const sec = document.getElementById('serverSection');
+    const sec = document.getElementById('extSection');
     sec.style.display = sec.style.display==='none' ? 'block' : 'none';
   }
 });
@@ -140,8 +134,7 @@ try {
   fetch(VIZ_URL + '/api/settings', { mode: 'no-cors', signal: ctrl.signal })
     .then(() => {
       document.getElementById('debateCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#59d28f;font-size:0.8rem">● 서버 연결됨</span>';
-      // 서버 있으면 자동으로 보여줌
-      document.getElementById('serverSection').style.display = 'block';
+      document.getElementById('extSection').style.display = 'block';
     })
     .catch(() => {});
 } catch(e) {}
