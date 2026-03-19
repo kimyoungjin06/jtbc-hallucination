@@ -12,9 +12,9 @@
 body { background: #0a0a12; color: var(--text); font-family: 'Noto Sans KR', -apple-system, sans-serif; height: 100vh; overflow: hidden; cursor: none; }
 /* 대기화면 ↔ 평가화면 전환 */
 .cyber-standby { transition: opacity 0.6s; }
-.cyber-standby.hidden { opacity: 0; pointer-events: none; position: absolute; }
-.app { display: none; } /* 숫자키 누를 때까지 숨김 */
-.app.active { display: flex; height: 100vh; width: 100vw; padding-top: 120px; }
+.cyber-standby.hidden { display: none; }
+.app { display: none; }
+.app.active { display: flex; height: 100vh; width: 100vw; padding-top: 120px; position: relative; z-index: 20; background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%); }
 
 /* ── Left: Person ── */
 .left-panel { flex: 0 0 40%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2vh 2vw; }
