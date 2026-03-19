@@ -263,53 +263,55 @@ function executeVerdict() {
   // ── Phase 1 (1s): 인물 등장 ──
   vt(() => topEl.classList.add('show'), 1000);
 
-  // ── Phase 2 (2.5s): 평가문 타이핑 + TTS ──
-  vt(() => {
+  // ── Phase 2 (2.5s): 평가문 타이핑 + TTS (둘 다 끝나면 다음) ──
+  vt(async () => {
     const evalEl = document.getElementById('vEval');
     evalEl.classList.add('show');
-    tryTTS(v.evaluation || '');
-    typeText(evalEl, v.evaluation || '(평가문 없음)', 35, () => {
-      // 타이핑 완료 → 일침
-      vt(() => {
-        const olEl = document.getElementById('vOneliner');
-        olEl.textContent = v.oneliner || '';
-        olEl.style.borderColor = gc;
-        olEl.style.color = gc;
-        olEl.classList.add('show');
-        tryTTS(v.oneliner || '');
-        // 일침 후 → 판정
-        vt(showJudgment, Math.max(2000, (v.oneliner||'').length * 100));
-      }, 800);
-    });
+    // 타이핑과 TTS 병렬, 둘 다 끝나면 다음
+    const typeDone = new Promise(r => typeText(evalEl, v.evaluation || '(평가문 없음)', 35, r));
+    const ttsDone = tryTTS(v.evaluation || '');
+    await Promise.all([typeDone, ttsDone]);
+
+    // 일침
+    await new Promise(r => vt(r, 800));
+    const olEl = document.getElementById('vOneliner');
+    olEl.textContent = v.oneliner || '';
+    olEl.style.borderColor = gc;
+    olEl.style.color = gc;
+    olEl.classList.add('show');
+    await tryTTS(v.oneliner || '');
+
+    // 판정
+    await new Promise(r => vt(r, 500));
+    showJudgment();
   }, 2500);
 
-  function showJudgment() {
+  async function showJudgment() {
     document.getElementById('vDivider').classList.add('show');
 
-    vt(() => {
-      const badge = document.getElementById('vGradeBadge');
-      badge.style.display = 'flex';
-      document.getElementById('vGrade').style.color = gc;
-      document.getElementById('vGrade').textContent = isFired ? '해고' : '유지';
-      document.getElementById('vLabel').style.color = gc;
-      document.getElementById('vLabel').textContent = '';
+    await new Promise(r => vt(r, 500));
 
-      photo.style.borderColor = gc;
-      photo.classList.add('glow');
-      document.getElementById('vName').style.color = gc;
+    const badge = document.getElementById('vGradeBadge');
+    badge.style.display = 'flex';
+    document.getElementById('vGrade').style.color = gc;
+    document.getElementById('vGrade').textContent = isFired ? '해고' : '유지';
+    document.getElementById('vLabel').style.color = gc;
+    document.getElementById('vLabel').textContent = '';
 
-      const concEl = document.getElementById('vConclusion');
-      concEl.textContent = v.conclusion || '';
-      concEl.style.color = gc;
-      concEl.classList.add('show');
+    photo.style.borderColor = gc;
+    photo.classList.add('glow');
+    document.getElementById('vName').style.color = gc;
 
-      tryTTS(`${v.conclusion || ''} ${v.order || ''}`);
-    }, 500);
+    const concEl = document.getElementById('vConclusion');
+    concEl.textContent = v.conclusion || '';
+    concEl.style.color = gc;
+    concEl.classList.add('show');
 
-    vt(() => {
-      document.getElementById('vOrder').textContent = v.order || '';
-      document.getElementById('vOrder').classList.add('show');
-    }, 2500);
+    // TTS 끝날 때까지 기다림
+    await tryTTS(`${v.conclusion || ''} ${v.order || ''}`);
+
+    document.getElementById('vOrder').textContent = v.order || '';
+    document.getElementById('vOrder').classList.add('show');
 
     vt(() => {
       const status = document.getElementById('vStatus');
@@ -349,36 +351,44 @@ function stopAllTTS() {
   if (currentAudio) { currentAudio.pause(); currentAudio.src = ''; currentAudio = null; }
 }
 
-async function tryTTS(text) {
+function tryTTS(text) {
   stopAllTTS();
-  if (!text) return;
+  if (!text) return Promise.resolve();
 
-  // 먼저 team_agent_vis 서버 시도
-  try {
-    const res = await fetch((CONFIG.TEAM_VIZ_URL || 'http://localhost:3000') + '/api/executor/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text, provider: 'openai', voiceId: 'onyx',
-        filter: 'executor', production: 'courtdrama',
-        speakingRate: 0.82, flattenIntonation: true,
-      }),
-    });
-    if (res.ok) {
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      currentAudio = new Audio(url);
-      currentAudio.play();
-      return;
+  return new Promise(async (resolve) => {
+    // 먼저 team_agent_vis 서버 시도
+    try {
+      const res = await fetch((CONFIG.TEAM_VIZ_URL || 'http://localhost:3000') + '/api/executor/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text, provider: 'openai', voiceId: 'onyx',
+          filter: 'executor', production: 'courtdrama',
+          speakingRate: 0.82, flattenIntonation: true,
+        }),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        currentAudio = new Audio(url);
+        currentAudio.onended = () => resolve();
+        currentAudio.onerror = () => resolve();
+        currentAudio.play().catch(() => resolve());
+        return;
+      }
+    } catch {}
+
+    // 폴백: 브라우저 TTS
+    if (window.speechSynthesis) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ko-KR'; u.rate = 0.8;
+      u.onend = () => resolve();
+      u.onerror = () => resolve();
+      speechSynthesis.speak(u);
+    } else {
+      resolve();
     }
-  } catch {}
-
-  // 폴백: 브라우저 TTS
-  if (window.speechSynthesis) {
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'ko-KR'; u.rate = 0.8;
-    speechSynthesis.speak(u);
-  }
+  });
 }
 
 /* ═══════════════════════════════════════
