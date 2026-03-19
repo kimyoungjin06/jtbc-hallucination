@@ -233,7 +233,9 @@ function getStance(agent,content) {
   if(content.includes('찬성')&&!content.includes('반대')) return 'pro';
   if(content.includes('반대')) return 'con';
   if(content.includes('흔들')||content.includes('유보')) return 'neutral';
-  return states[agent]?.stance || AGENTS.find(a=>a.id===agent)?.start === '찬성' ? 'pro' : AGENTS.find(a=>a.id===agent)?.start === '반대' ? 'con' : 'neutral';
+  if(states[agent]?.stance) return states[agent].stance;
+  const a = AGENTS.find(x=>x.id===agent);
+  return a?.start==='찬성' ? 'pro' : a?.start==='반대' ? 'con' : 'neutral';
 }
 function stanceLabel(s) { return s==='pro'?'찬성':s==='con'?'반대':'중립'; }
 
@@ -325,13 +327,17 @@ function skipToEnd(){
     states[t.agent].stance=s;states[t.agent].count++;states[t.agent].last=t.content;states[t.agent].speaking=false;
     turnIdx++;
   }
-  renderGrid();showSpotlight(data.turns[29].agent,data.turns[29].content);
+  const lastTurn = data.turns[data.turns.length - 1];
+  renderGrid();showSpotlight(lastTurn.agent, lastTurn.content);
   document.getElementById('mPhase').textContent='결 — 마무리 🏁';
-  document.getElementById('mTurn').textContent='T30 / 30';
+  document.getElementById('mTurn').textContent=`T${lastTurn.turn} / ${data.turns.length}`;
   showFinal();
 }
 function backToSelect(){
   clearTimeout(timer);
+  paused = false;
+  data = null;
+  document.getElementById('pauseBtn').textContent = '⏸';
   document.getElementById('meetingApp').classList.remove('active');
   document.getElementById('selectHub').classList.remove('hidden');
   document.getElementById('cyberStandby').classList.remove('hidden');
