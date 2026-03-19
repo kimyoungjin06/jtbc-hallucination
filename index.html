@@ -108,6 +108,11 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
         <div class="card-title">토론 서버</div>
         <div class="card-desc">실시간 생성 + TTS<br>(서버 필요)</div>
       </a>
+      <a class="card accent-red" href="javascript:void(0)" onclick="openAnnounce()" id="announceCard">
+        <div class="card-icon" style="font-size:2rem">F+</div>
+        <div class="card-title">최종 발표 (서버)</div>
+        <div class="card-desc">TTS 음성 필터<br>(서버 필요)</div>
+      </a>
     </div>
   </div>
 </div>
@@ -116,6 +121,7 @@ body { background: linear-gradient(170deg, #05090d 0%, #0a1520 40%, #0d1a28 100%
 <script>
 const VIZ_URL = (typeof CONFIG !== 'undefined' && CONFIG.TEAM_VIZ_URL) || 'http://localhost:3000';
 function openDebate() { window.open(VIZ_URL + '/executor', '_blank'); }
+function openAnnounce() { window.open(VIZ_URL + '/executor#announce', '_blank'); }
 
 // 서버 상태 체크 (실패해도 콘솔 에러 없음)
 try {
@@ -124,6 +130,7 @@ try {
   fetch(VIZ_URL + '/api/settings', { mode: 'no-cors', signal: ctrl.signal })
     .then(() => {
       document.getElementById('debateCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#59d28f;font-size:0.8rem">● 서버 연결됨</span>';
+      document.getElementById('announceCard').querySelector('.card-desc').innerHTML += '<br><span style="color:#59d28f;font-size:0.8rem">● 서버 연결됨</span>';
     })
     .catch(() => {});
 } catch(e) {}

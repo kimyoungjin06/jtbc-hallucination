@@ -479,7 +479,7 @@ function ModeTabBar({
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.altKey && e.key.toLowerCase() === "s") {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         setShowExtra(prev => !prev);
       }
@@ -1499,7 +1499,9 @@ function AnnounceMode({
    ══════════════════════════════════════ */
 
 export default function ExecutorPage() {
-  const [mode, setMode] = useState<AppMode>("debate");
+  const [mode, setMode] = useState<AppMode>(
+    typeof window !== 'undefined' && window.location.hash === '#announce' ? 'announce' : 'debate'
+  );
   const [selectedModel, setSelectedModel] = useState("gpt-5.4");
   const [debateComplete, setDebateComplete] = useState(false);
   const [aiEvaluations, setAiEvaluations] = useState<Record<string, { grade: string; evaluation: string; oneliner: string }>>({});
@@ -1524,11 +1526,13 @@ export default function ExecutorPage() {
     a.click(); URL.revokeObjectURL(url);
   }, [evaluations, observations]);
 
-  const [showHeader, setShowHeader] = useState(false);
+  const [showHeader, setShowHeader] = useState(
+    typeof window !== 'undefined' && window.location.hash === '#announce'
+  );
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      if (e.altKey && e.key.toLowerCase() === "s") {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "h") {
         e.preventDefault();
         setShowHeader(prev => !prev);
       }
