@@ -89,6 +89,17 @@ body { background: var(--bg); color: #e0e0e0; font-family: 'Noto Sans KR', sans-
 </style>
 </head>
 <body class="cyber">
+<script>
+// iframe 안에서 로드되면 top-bar 숨기고 padding 조정
+if (window.self !== window.top) {
+  document.documentElement.style.setProperty('--iframe-mode', '1');
+  document.addEventListener('DOMContentLoaded', () => {
+    const bar = document.querySelector('.top-bar');
+    if (bar) bar.style.display = 'none';
+    document.querySelector('.cyber-main').style.paddingTop = '0';
+  });
+}
+</script>
 
 <canvas id="bgCanvas"></canvas>
 <div class="scanline"></div>
@@ -364,7 +375,7 @@ function tryTTS(text) {
         body: JSON.stringify({
           text, provider: 'openai', voiceId: 'onyx',
           filter: 'executor', production: 'courtdrama',
-          speakingRate: 0.82, flattenIntonation: true,
+          speakingRate: 1.0, flattenIntonation: true,
         }),
       });
       if (res.ok) {
@@ -381,7 +392,7 @@ function tryTTS(text) {
     // 폴백: 브라우저 TTS
     if (window.speechSynthesis) {
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'ko-KR'; u.rate = 0.8;
+      u.lang = 'ko-KR'; u.rate = 0.95;
       u.onend = () => resolve();
       u.onerror = () => resolve();
       speechSynthesis.speak(u);
