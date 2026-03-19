@@ -534,6 +534,33 @@ function AITeamBanner() {
    Mode: 토론 배틀 (라이브 토론)
    ══════════════════════════════════════ */
 
+/* turns→events 변환: 자유 토론 JSON → executor replay 형식 */
+const AGENT_ID_MAP: Record<string, string> = {
+  '효율론자': 'ai1', '데이터주의자': 'ai2', '인권변호사': 'ai3',
+  '현장노동자': 'ai4', '철학자': 'ai5', '중재자': 'ai6',
+};
+function turnsToEvents(data: { turns: { turn: number; agent: string; content: string }[]; result: { pro: number; con: number } }) {
+  const events: { type: string; data: unknown; delayMs: number }[] = [];
+  let delay = 0;
+  for (const t of data.turns) {
+    const agentId = AGENT_ID_MAP[t.agent] || t.agent;
+    // speech_start
+    events.push({ type: 'speech_start', data: { agentId, text: '' }, delayMs: delay });
+    // split into sentences for typing effect
+    const sentences = t.content.match(/[^.!?。]+[.!?。]?/g) || [t.content];
+    for (const s of sentences) {
+      events.push({ type: 'speech_chunk', data: { agentId, text: s.trim() }, delayMs: delay + 200 });
+      delay += 300;
+    }
+    events.push({ type: 'speech_end', data: { agentId }, delayMs: delay + 500 });
+    delay += 1500;
+  }
+  // final result
+  events.push({ type: 'final_result', data: { content: `최종: 찬성 ${data.result.pro} : 반대 ${data.result.con}`, chars: 0 }, delayMs: delay });
+  events.push({ type: 'done', data: { totalTokens: 0, estimatedCost: 0, turns: data.turns.length }, delayMs: delay + 500 });
+  return { events };
+}
+
 function DebateMode({ selectedModel, setSelectedModel, onComplete, tts }: {
   selectedModel: string;
   setSelectedModel: (m: string) => void;
@@ -607,13 +634,13 @@ function DebateMode({ selectedModel, setSelectedModel, onComplete, tts }: {
               <button className="exec-filter-btn" onClick={async () => {
                 try {
                   const res = await fetch('/api/executor/debate-replay?type=pro');
-                  if (res.ok) { const d = await res.json(); debate.replay(d.debate); }
+                  if (res.ok) { const d = await res.json(); debate.replay(turnsToEvents(d.debate)); }
                 } catch {}
               }}>찬성 베스트 (4:2)</button>
               <button className="exec-filter-btn" onClick={async () => {
                 try {
                   const res = await fetch('/api/executor/debate-replay?type=con');
-                  if (res.ok) { const d = await res.json(); debate.replay(d.debate); }
+                  if (res.ok) { const d = await res.json(); debate.replay(turnsToEvents(d.debate)); }
                 } catch {}
               }}>반대 베스트 (6:0)</button>
             </div>
