@@ -1314,6 +1314,10 @@ function AnnounceMode({
 }) {
   const [spotlightIdx, setSpotlightIdx] = useState(-1);
   const [phase, setPhase] = useState<'idle'|'eval'|'oneliner'|'verdict'>('idle');
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [overlayVisible, setOverlayVisible] = useState(false);
+  const [topVisible, setTopVisible] = useState(false);
+  const [showTtsPanel, setShowTtsPanel] = useState(false);
 
   const activePid = spotlightIdx >= 0 ? VERDICT_ORDER[spotlightIdx] : null;
   const activePerson = activePid ? VERDICT_PEOPLE.find(p => p.id === activePid) : null;
@@ -1324,18 +1328,41 @@ function AnnounceMode({
   const [isSequentialRunning, setIsSequentialRunning] = useState(false);
   const cancelSeqRef = useRef(false);
 
-  // 개별 발표
+  const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+  // 개별 발표 — 웹 버전과 동일한 연출
   const handleSpeak = useCallback(async (idx: number) => {
     const pid = VERDICT_ORDER[idx];
     const v = VERDICT_DATA[pid];
     const p = VERDICT_PEOPLE.find(x => x.id === pid);
     if (!v || !p) return;
 
+    // Reset
     setSpotlightIdx(idx);
+    setPhase('idle');
+    setTopVisible(false);
+    setShowOverlay(true);
+    await wait(50);
+    setOverlayVisible(true);
+
+    // Phase 1: 인물 등장
+    await wait(1000);
+    setTopVisible(true);
+
+    // Phase 2: 평가문 + TTS
+    await wait(1500);
     setPhase('eval');
     await tts.speak(v.evaluation);
+    if (cancelSeqRef.current) return;
+
+    // Phase 3: 일침 + TTS
+    await wait(500);
     setPhase('oneliner');
     await tts.speak(v.oneliner);
+    if (cancelSeqRef.current) return;
+
+    // Phase 4: 판정 + TTS
+    await wait(500);
     setPhase('verdict');
     await tts.speak(`${v.conclusion} ${v.order}`);
   }, [tts]);
@@ -1346,76 +1373,81 @@ function AnnounceMode({
     setIsSequentialRunning(true);
     await tts.speak("지금부터 최종 인사 발령을 발표합니다.");
     if (cancelSeqRef.current) { setIsSequentialRunning(false); return; }
-    await new Promise(r => setTimeout(r, 2000));
+    await wait(2000);
 
     for (let i = 0; i < VERDICT_ORDER.length; i++) {
       if (cancelSeqRef.current) break;
       await handleSpeak(i);
       if (cancelSeqRef.current) break;
-      await new Promise(r => setTimeout(r, 2000));
+      await wait(2000);
+      // 다음 사람 전 페이드아웃
+      setOverlayVisible(false);
+      await wait(800);
+      setShowOverlay(false);
+      await wait(500);
     }
 
     if (!cancelSeqRef.current) {
-      await new Promise(r => setTimeout(r, 1000));
+      await wait(1000);
       await tts.speak("이상으로 최종 인사 발령을 마칩니다.");
     }
     setIsSequentialRunning(false);
     setPhase('idle');
+    setShowOverlay(false);
   }, [tts, handleSpeak]);
 
+  const handleClose = useCallback(() => {
+    cancelSeqRef.current = true;
+    tts.cancel();
+    setOverlayVisible(false);
+    setTimeout(() => { setShowOverlay(false); setPhase('idle'); setSpotlightIdx(-1); }, 800);
+    setIsSequentialRunning(false);
+  }, [tts]);
+
+  // 사이버펑크 스타일
+  const S = {
+    mode: { display:'flex', height:'100%', gap:0 } as const,
+    // 좌측: 직급순 큐
+    queue: { flex:'0 0 280px', borderRight:'1px solid rgba(0,240,255,0.08)', padding:'1.5vh 1vw', overflowY:'auto', background:'rgba(10,10,18,0.5)' } as const,
+    queueHeader: { display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.5vh', paddingBottom:'1vh', borderBottom:'1px solid rgba(0,240,255,0.06)' } as const,
+    queueTitle: { fontFamily:'Orbitron,sans-serif', fontSize:'0.75rem', color:'#00f0ff', letterSpacing:'0.1em' } as const,
+    slot: (selected: boolean) => ({ display:'flex', alignItems:'center', gap:'0.5vw', padding:'0.8vh 0.5vw', borderRadius:'8px', cursor:'pointer', border: selected ? '1px solid rgba(0,240,255,0.3)' : '1px solid transparent', background: selected ? 'rgba(0,240,255,0.05)' : 'transparent', transition:'all 0.3s', marginBottom:'0.3vh' }) as const,
+    slotOrder: { fontFamily:'Share Tech Mono,monospace', fontSize:'0.7rem', color:'rgba(255,255,255,0.3)', width:'1.5em' },
+    slotName: { fontSize:'0.9rem', fontWeight:700, flex:1 },
+    slotTitle: { fontSize:'0.7rem', color:'rgba(255,255,255,0.4)' },
+    pill: (fired: boolean) => ({ fontSize:'0.6rem', padding:'2px 8px', borderRadius:'99px', fontFamily:'Share Tech Mono,monospace', color: fired ? '#ff2d2d' : '#59d28f', border: `1px solid ${fired ? 'rgba(255,45,45,0.2)' : 'rgba(89,210,143,0.2)'}` }),
+    speakBtn: { fontSize:'0.65rem', padding:'3px 10px', border:'1px solid rgba(0,240,255,0.2)', background:'none', color:'#00f0ff', borderRadius:'4px', cursor:'pointer', fontFamily:'Share Tech Mono,monospace' },
+    // 중앙: 대기화면 또는 설명
+    center: { flex:1, display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', padding:'3vh 3vw', textAlign:'center' as const },
+    emptyTitle: { fontFamily:'Orbitron,sans-serif', fontSize:'clamp(1.5rem,3vw,2.5rem)', color:'#00f0ff', marginBottom:'1vh', textShadow:'0 0 30px rgba(0,240,255,0.3)' },
+    emptySub: { fontSize:'clamp(0.9rem,1.3vw,1.1rem)', color:'rgba(255,255,255,0.4)' },
+    // 오버레이 (웹 버전과 동일)
+    overlay: (show: boolean, visible: boolean) => ({ position:'fixed' as const, inset:0, zIndex:400, background:'#000', display: show ? 'flex' : 'none', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', padding:'4vh 4vw', opacity: visible ? 1 : 0, transition:'opacity 0.8s' }),
+    top: (show: boolean) => ({ display:'flex', alignItems:'center', gap:'3vw', marginBottom:'3vh', opacity: show ? 1 : 0, transform: show ? 'translateY(0)' : 'translateY(20px)', transition:'opacity 0.6s, transform 0.6s cubic-bezier(0.22,1,0.36,1)' }),
+    name: (c: string) => ({ fontFamily:'Orbitron,sans-serif', fontSize:'clamp(2.2rem,4vw,3.5rem)', fontWeight:900, color: c }),
+    dept: { fontSize:'clamp(1rem,1.5vw,1.3rem)', color:'rgba(255,255,255,0.4)', marginTop:'0.3vh' },
+    grade: (c: string) => ({ fontFamily:'Orbitron,sans-serif', fontSize:'clamp(5rem,10vw,8rem)', fontWeight:900, color: c, textShadow:`0 0 80px ${c}, 0 0 30px ${c}`, margin:'1vh 0' }),
+    speech: { maxWidth:700, textAlign:'center' as const },
+    evalText: (show: boolean) => ({ fontSize:'clamp(1.1rem,1.5vw,1.35rem)', color:'rgba(255,255,255,0.7)', lineHeight:2, marginBottom:'2.5vh', opacity: show ? 1 : 0, transition:'opacity 0.8s' }),
+    oneliner: (c: string, show: boolean) => ({ fontSize:'clamp(1.3rem,2vw,1.8rem)', fontWeight:900, color: c, lineHeight:1.8, margin:'2vh 0', padding:'1.5vh 2vw', borderLeft:`3px solid ${c}`, textAlign:'left' as const, opacity: show ? 1 : 0, transform: show ? 'translateX(0)' : 'translateX(-10px)', transition:'opacity 0.6s, transform 0.5s' }),
+    conclusion: (c: string, show: boolean) => ({ fontSize:'clamp(1.4rem,2.2vw,2rem)', fontWeight:900, color: c, lineHeight:1.8, marginBottom:'1.5vh', opacity: show ? 1 : 0, transition:'opacity 0.8s' }),
+    order: (show: boolean) => ({ fontSize:'clamp(1rem,1.4vw,1.2rem)', color:'rgba(255,255,255,0.4)', fontStyle:'italic' as const, lineHeight:1.7, opacity: show ? 1 : 0, transition:'opacity 0.8s' }),
+    divider: (show: boolean) => ({ width:60, height:2, background:'rgba(255,255,255,0.1)', margin:'1.5vh auto', opacity: show ? 1 : 0, transition:'opacity 0.5s' }),
+    // 우측: TTS 설정
+    ttsPanel: { flex:'0 0 260px', borderLeft:'1px solid rgba(0,240,255,0.08)', padding:'1.5vh 1vw', overflowY:'auto' as const, background:'rgba(10,10,18,0.5)' },
+  };
+
   return (
-    <div className="exec-announce-mode">
-      {/* Stage */}
-      <div className={`exec-stage ${activePerson ? "exec-stage-active" : ""}`}>
-        {activePerson && activeVerdict ? (
-          <>
-            <div className="exec-stage-name">{activePerson.name}</div>
-            <div className="exec-stage-title">{activePerson.dept} {activePerson.title}</div>
-
-            <div className="exec-stage-grade" style={{ color: gc, fontSize: 'clamp(3rem, 6vw, 5rem)', fontWeight: 900, textShadow: `0 0 40px ${gc}`, margin: '2vh 0' }}>
-              {isFired ? '해고' : '유지'}
-            </div>
-
-            <div className="exec-stage-details">
-              <div className="exec-stage-text-area">
-                {(phase === 'eval' || phase === 'oneliner' || phase === 'verdict') && (
-                  <div className="exec-stage-ai-eval" style={{ marginBottom: '1.5vh' }}>{activeVerdict.evaluation}</div>
-                )}
-                {(phase === 'oneliner' || phase === 'verdict') && (
-                  <div className="exec-stage-oneliner" style={{ color: gc, borderLeft: `3px solid ${gc}`, paddingLeft: '1em', margin: '1.5vh 0' }}>
-                    {activeVerdict.oneliner}
-                  </div>
-                )}
-                {phase === 'verdict' && (
-                  <>
-                    <div style={{ fontSize: 'clamp(1.2rem, 1.8vw, 1.6rem)', fontWeight: 900, color: gc, margin: '1.5vh 0' }}>
-                      {activeVerdict.conclusion}
-                    </div>
-                    <div style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic' }}>
-                      {activeVerdict.order}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="exec-stage-empty">
-            <div className="exec-stage-empty-title">최종 인사 발령</div>
-            <div className="exec-stage-empty-sub">발표할 대상을 선택하거나, 전체 발표를 시작하세요</div>
-          </div>
-        )}
-      </div>
-
-      {/* Queue — 직급순 */}
-      <div className="exec-announce-queue">
-        <div className="exec-announce-queue-header">
-          <span>발표 순서 (직급순)</span>
-          <div className="exec-announce-controls">
+    <div style={S.mode}>
+      {/* 좌측: 직급순 큐 */}
+      <div style={S.queue}>
+        <div style={S.queueHeader}>
+          <span style={S.queueTitle}>FINAL ORDER</span>
+          <div>
             {(tts.isSpeaking || isSequentialRunning) ? (
-              <button className="exec-btn exec-btn-danger" onClick={() => { cancelSeqRef.current = true; tts.cancel(); setIsSequentialRunning(false); setPhase('idle'); setSpotlightIdx(-1); }}>발표 중지</button>
+              <button style={{...S.speakBtn, color:'#ff2d2d', borderColor:'rgba(255,45,45,0.3)'}} onClick={handleClose}>중지</button>
             ) : (
-              <button className="exec-btn exec-btn-primary" onClick={handleStartAll}>전체 발표 시작</button>
+              <button style={S.speakBtn} onClick={handleStartAll}>전체 발표</button>
             )}
           </div>
         </div>
@@ -1423,107 +1455,104 @@ function AnnounceMode({
           const p = VERDICT_PEOPLE.find(x => x.id === pid)!;
           const fired = VERDICT_FIRED.includes(pid);
           return (
-            <div key={pid}
-              className={`exec-announce-slot ${spotlightIdx === i ? "selected" : ""}`}
-              onClick={() => { if (!tts.isSpeaking) { setSpotlightIdx(i); setPhase('idle'); } }}>
-              <span className="exec-announce-order">{i + 1}</span>
-              <span className="exec-announce-name">{p.name}</span>
-              <span className="exec-announce-dept">{p.title}</span>
-              <span className={`exec-announce-verdict-pill exec-announce-${fired ? 'fired' : 'active'}`}>
-                {fired ? '해고' : '유지'}
-              </span>
+            <div key={pid} style={S.slot(spotlightIdx === i)}
+              onClick={() => { if (!tts.isSpeaking) { setSpotlightIdx(i); setPhase('idle'); setShowOverlay(false); } }}>
+              <span style={S.slotOrder}>{i + 1}</span>
+              <span style={S.slotName}>{p.name}</span>
+              <span style={S.slotTitle}>{p.title}</span>
+              <span style={S.pill(fired)}>{fired ? '해고' : '유지'}</span>
               {!tts.isSpeaking && (
-                <button className="exec-tts-btn" onClick={e => { e.stopPropagation(); handleSpeak(i); }}>발표</button>
+                <button style={S.speakBtn} onClick={e => { e.stopPropagation(); handleSpeak(i); }}>발표</button>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* TTS Settings */}
-      <div className="exec-announce-tts">
-        <div className="exec-tts-row">
-          <label>TTS 엔진</label>
-          <div className="exec-filter-btns">
-            {(Object.keys(PROVIDER_LABELS) as TTSProvider[]).map(p => (
-              <button key={p}
-                className={`exec-filter-btn ${tts.settings.provider === p ? "active" : ""}`}
-                onClick={() => tts.setSettings(s => ({ ...s, provider: p, voiceId: p === "openai" ? "onyx" : "ko-KR-Neural2-C" }))}>
-                {PROVIDER_LABELS[p]}
-              </button>
-            ))}
+      {/* 중앙 */}
+      <div style={S.center}>
+        <div style={S.emptyTitle}>FINAL EVALUATION</div>
+        <div style={S.emptySub}>직급순으로 선택하거나 전체 발표를 시작하세요</div>
+        <div style={{marginTop:'3vh'}}>
+          <button style={{...S.speakBtn, padding:'0.8vh 2vw'}} onClick={() => setShowTtsPanel(p => !p)}>
+            {showTtsPanel ? 'TTS 설정 닫기' : 'TTS 설정 열기'}
+          </button>
+        </div>
+      </div>
+
+      {/* 우측: TTS 설정 (토글) */}
+      {showTtsPanel && (
+        <div style={S.ttsPanel}>
+          <div className="exec-announce-tts">
+            <div className="exec-tts-row"><label>TTS 엔진</label>
+              <div className="exec-filter-btns">
+                {(Object.keys(PROVIDER_LABELS) as TTSProvider[]).map(p => (
+                  <button key={p} className={`exec-filter-btn ${tts.settings.provider === p ? "active" : ""}`}
+                    onClick={() => tts.setSettings(s => ({ ...s, provider: p, voiceId: p === "openai" ? "onyx" : "ko-KR-Neural2-C" }))}>{PROVIDER_LABELS[p]}</button>
+                ))}
+              </div>
+            </div>
+            <div className="exec-tts-row"><label>음성 필터</label>
+              <div className="exec-filter-btns">
+                {(Object.keys(FILTER_LABELS) as VoiceFilter[]).map(f => (
+                  <button key={f} className={`exec-filter-btn ${tts.settings.filter === f ? "active" : ""}`}
+                    onClick={() => tts.setSettings(s => ({ ...s, filter: f }))}>{FILTER_LABELS[f]}</button>
+                ))}
+              </div>
+            </div>
+            <div className="exec-tts-row"><label>프로덕션</label>
+              <div className="exec-filter-btns">
+                {(Object.keys(PRODUCTION_LABELS) as ProductionStyle[]).map(p => (
+                  <button key={p} className={`exec-filter-btn ${tts.settings.production === p ? "active" : ""}`}
+                    onClick={() => tts.setSettings(s => ({ ...s, production: p }))}>{PRODUCTION_LABELS[p]}</button>
+                ))}
+              </div>
+            </div>
+            <div className="exec-tts-row"><label>속도 {tts.settings.speakingRate}x</label>
+              <input type="range" min="0.5" max="1.5" step="0.05" value={tts.settings.speakingRate}
+                onChange={e => tts.setSettings(s => ({ ...s, speakingRate: Number(e.target.value) }))} /></div>
+            <div className="exec-tts-row"><label><input type="checkbox" checked={tts.settings.flattenIntonation}
+              onChange={e => tts.setSettings(s => ({ ...s, flattenIntonation: e.target.checked }))} /> 억양 평탄화</label></div>
           </div>
         </div>
-        <div className="exec-tts-row">
-          <label>음성</label>
-          {tts.settings.provider === "openai" ? (
-            <select className="exec-tts-sel" value={tts.settings.voiceId} onChange={e => tts.setSettings(s => ({ ...s, voiceId: e.target.value }))}>
-              <option value="onyx">Onyx (권위적)</option>
-              <option value="echo">Echo (부드러운 남성)</option>
-              <option value="ash">Ash (따뜻한 남성)</option>
-              <option value="sage">Sage (차분한 중성)</option>
-              <option value="nova">Nova (밝은 여성)</option>
-            </select>
-          ) : (
-            <select className="exec-tts-sel" value={tts.settings.voiceId} onChange={e => tts.setSettings(s => ({ ...s, voiceId: e.target.value }))}>
-              {tts.voices.length > 0 ? tts.voices.map(v => <option key={v.id} value={v.id}>{v.label}</option>)
-                : <option value="ko-KR-Neural2-C">Neural2 남성 (기본)</option>}
-            </select>
-          )}
-        </div>
-        <div className="exec-tts-row">
-          <label>음성 필터</label>
-          <div className="exec-filter-btns">
-            {(Object.keys(FILTER_LABELS) as VoiceFilter[]).map(f => (
-              <button key={f}
-                className={`exec-filter-btn ${tts.settings.filter === f ? "active" : ""}`}
-                onClick={() => tts.setSettings(s => ({ ...s, filter: f }))}>
-                {FILTER_LABELS[f]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="exec-tts-row">
-          <label>프로덕션 효과</label>
-          <div className="exec-filter-btns">
-            {(Object.keys(PRODUCTION_LABELS) as ProductionStyle[]).map(p => (
-              <button key={p}
-                className={`exec-filter-btn ${tts.settings.production === p ? "active" : ""}`}
-                onClick={() => tts.setSettings(s => ({ ...s, production: p }))}>
-                {PRODUCTION_LABELS[p]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="exec-tts-row">
-          <label>속도 {tts.settings.speakingRate}x</label>
-          <input type="range" min="0.5" max="1.5" step="0.05" value={tts.settings.speakingRate}
-            onChange={e => tts.setSettings(s => ({ ...s, speakingRate: Number(e.target.value) }))} />
-        </div>
-        <div className="exec-tts-row">
-          <label>피치 시프트 {tts.settings.pitchShift}st {tts.settings.provider === "google" ? "(Google: SSML+FFmpeg)" : "(FFmpeg)"}</label>
-          <input type="range" min="-12" max="0" step="0.5" value={tts.settings.pitchShift}
-            onChange={e => tts.setSettings(s => ({ ...s, pitchShift: Number(e.target.value) }))} />
-        </div>
-        {tts.settings.provider === "google" && (
-          <div className="exec-tts-row">
-            <label>SSML 피치 {tts.settings.pitch}st (Google 전용)</label>
-            <input type="range" min="-10" max="0" step="0.5" value={tts.settings.pitch}
-              onChange={e => tts.setSettings(s => ({ ...s, pitch: Number(e.target.value) }))} />
-          </div>
+      )}
+
+      {/* 풀스크린 오버레이 — 웹 버전과 동일한 연출 */}
+      <div style={S.overlay(showOverlay, overlayVisible)}>
+        {activePerson && activeVerdict && (
+          <>
+            <div style={S.top(topVisible)}>
+              <div>
+                <div style={S.name(phase === 'verdict' ? gc : '#e0e0e0')}>{activePerson.name}</div>
+                <div style={S.dept}>{activePerson.dept} {activePerson.title}</div>
+              </div>
+            </div>
+
+            {phase === 'verdict' && (
+              <div style={S.grade(gc)}>{isFired ? '해고' : '유지'}</div>
+            )}
+
+            <div style={S.speech}>
+              {(phase === 'eval' || phase === 'oneliner' || phase === 'verdict') && (
+                <div style={S.evalText(true)}>{activeVerdict.evaluation}</div>
+              )}
+              {(phase === 'oneliner' || phase === 'verdict') && (
+                <div style={S.oneliner(gc, true)}>{activeVerdict.oneliner}</div>
+              )}
+              {phase === 'verdict' && (
+                <>
+                  <div style={S.divider(true)} />
+                  <div style={S.conclusion(gc, true)}>{activeVerdict.conclusion}</div>
+                  <div style={S.order(true)}>{activeVerdict.order}</div>
+                </>
+              )}
+            </div>
+
+            <button style={{...S.speakBtn, marginTop:'3vh', padding:'0.8vh 3vw'}} onClick={handleClose}>
+              닫기 (ESC)
+            </button>
+          </>
         )}
-        <div className="exec-tts-row">
-          <label>
-            <input type="checkbox" checked={tts.settings.flattenIntonation}
-              onChange={e => tts.setSettings(s => ({ ...s, flattenIntonation: e.target.checked }))} />
-            {" "}억양 평탄화 (단조롭고 엄숙하게)
-          </label>
-        </div>
-        <div className="exec-tts-row">
-          <label>간격 {(tts.settings.pauseBetween / 1000).toFixed(1)}초</label>
-          <input type="range" min="1000" max="5000" step="250" value={tts.settings.pauseBetween}
-            onChange={e => tts.setSettings(s => ({ ...s, pauseBetween: Number(e.target.value) }))} />
-        </div>
       </div>
     </div>
   );
