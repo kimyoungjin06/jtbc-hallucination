@@ -87,6 +87,8 @@ body { background: #0a0a12; color: var(--text); font-family: 'Noto Sans KR', san
   font-size: clamp(1.05rem, 1.4vw, 1.25rem); line-height: 1.8; color: var(--text);
   margin-top: 0.5vh;
 }
+.spot-text .cursor { display: inline-block; width: 2px; height: 1.1em; background: var(--cyan); margin-left: 2px; animation: cursorBlink 0.6s step-end infinite; vertical-align: text-bottom; }
+@keyframes cursorBlink { 0%,100%{opacity:1}50%{opacity:0} }
 .spot-empty { color: var(--muted); font-size: 0.9rem; padding: 3vh 0; text-align: center; }
 
 /* 6인 타일 그리드 */
@@ -300,7 +302,9 @@ function updateTugBar() {
   document.getElementById('tugFillCon').style.width = (con/total*50)+'%';
 }
 
-function showSpotlight(agent, content) {
+let typeTimer = null;
+function showSpotlight(agent, content, onDone) {
+  if(typeTimer) { clearInterval(typeTimer); typeTimer=null; }
   const a = AGENTS.find(x=>x.id===agent);
   const s = states[agent]?.stance || 'neutral';
   document.getElementById('spotlight').innerHTML = `
@@ -309,8 +313,30 @@ function showSpotlight(agent, content) {
       <div><div class="spot-name">${agent}</div><div class="spot-role">${a?.role||''}</div></div>
       <span class="spot-stance ${s}">${stanceLabel(s)}</span>
     </div>
-    <div class="spot-text">${content}</div>
+    <div class="spot-text" id="spotText"><span class="cursor"></span></div>
   `;
+  // 타이핑 효과
+  const textEl = document.getElementById('spotText');
+  let idx = 0;
+  const chars = [...content];
+  const typeSpeed = speed >= 3 ? 0 : speed >= 2 ? 15 : 30; // 속도에 따라 조절
+  if(typeSpeed === 0) {
+    // 3x: 즉시 표시
+    textEl.innerHTML = content;
+    if(onDone) onDone();
+    return;
+  }
+  typeTimer = setInterval(() => {
+    if(idx < chars.length) {
+      // 커서 앞에 글자 삽입
+      textEl.innerHTML = content.substring(0, idx+1) + '<span class="cursor"></span>';
+      idx++;
+    } else {
+      clearInterval(typeTimer); typeTimer = null;
+      textEl.innerHTML = content; // 커서 제거
+      if(onDone) onDone();
+    }
+  }, typeSpeed);
 }
 
 function startReplay(type) {
@@ -345,13 +371,15 @@ function playNext() {
 
   updateTile(t.agent);
   updateTugBar();
-  showSpotlight(t.agent, t.content);
   document.getElementById('mPhase').textContent=phase?.name||'';
   document.getElementById('mTurn').textContent=`T${t.turn} / ${data.turns.length}`;
 
   turnIdx++;
-  const delay=[2500,1200,500][speed-1]||2500;
-  timer=setTimeout(playNext,delay);
+  // 타이핑 완료 후 잠시 대기 → 다음 턴
+  const pauseAfter = [800, 400, 0][speed-1] || 800;
+  showSpotlight(t.agent, t.content, () => {
+    timer = setTimeout(playNext, pauseAfter);
+  });
 }
 
 function showFinal() {
@@ -379,13 +407,19 @@ function skipToEnd(){
   initGrid();
   AGENTS.forEach(a=>updateTile(a.id));
   updateTugBar();
-  showSpotlight(lastTurn.agent, lastTurn.content);
+  if(typeTimer){clearInterval(typeTimer);typeTimer=null;}
+  const a2=AGENTS.find(x=>x.id===lastTurn.agent);
+  const s2=states[lastTurn.agent]?.stance||'neutral';
+  document.getElementById('spotlight').innerHTML=`
+    <div class="spot-meta"><div class="spot-avatar">${a2?.avatar||'?'}</div><div><div class="spot-name">${lastTurn.agent}</div><div class="spot-role">${a2?.role||''}</div></div><span class="spot-stance ${s2}">${stanceLabel(s2)}</span></div>
+    <div class="spot-text">${lastTurn.content}</div>`;
   document.getElementById('mPhase').textContent='결 — 마무리 🏁';
   document.getElementById('mTurn').textContent=`T${lastTurn.turn} / ${data.turns.length}`;
   showFinal();
 }
 function backToSelect(){
   clearTimeout(timer);
+  if(typeTimer){clearInterval(typeTimer);typeTimer=null;}
   paused = false;
   data = null;
   document.getElementById('pauseBtn').textContent = '⏸';
