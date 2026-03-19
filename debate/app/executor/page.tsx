@@ -1535,16 +1535,32 @@ export default function ExecutorPage() {
     a.click(); URL.revokeObjectURL(url);
   }, [evaluations, observations]);
 
+  const [showHeader, setShowHeader] = useState(false);
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.altKey && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        setShowHeader(prev => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
   return (
     <main className="exec-shell">
-      <BrandingBar />
-
-      <div className="exec-header-bar">
-        <ModeTabBar mode={mode} onChange={setMode} debateCompleted={debateCompleted} evalCount={evaluations.length} ttsActive={tts.isSpeaking} />
-        <div className="exec-header-actions">
-          <Link className="exec-action-btn" href="/">HOME</Link>
-        </div>
-      </div>
+      {showHeader && (
+        <>
+          <BrandingBar />
+          <div className="exec-header-bar">
+            <ModeTabBar mode={mode} onChange={setMode} debateCompleted={debateCompleted} evalCount={evaluations.length} ttsActive={tts.isSpeaking} />
+            <div className="exec-header-actions">
+              <Link className="exec-action-btn" href="/">HOME</Link>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="exec-content">
         {mode === "debate" && <DebateMode selectedModel={selectedModel} setSelectedModel={setSelectedModel} onComplete={setDebateComplete} tts={tts} />}
