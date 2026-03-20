@@ -60,8 +60,8 @@ const CONFIG = {
     p6: { contribution:'D', competency:'C', collaboration:'B', crisis:'D', intuition:'C', ethics:'B', aiVerification:'D' },
   },
   // 'auto' = 총점 자동계산, 직접 ID 지정도 가능
-  MID_F_ID: 'auto',
-  MID_S_ID: 'auto',
+  MID_F_ID: 'p2',   // 황제성 — 관찰 기여 최소 (1건, 직접 문제 해결 없음)
+  MID_S_ID: 'p4',   // 허성범 — 분석+창의 동시 발휘, 문제 풀이 핵심 기여
 
   // ═══════════════════════════════════
   // 최종평가 (전 라운드 종료 후)

@@ -351,8 +351,8 @@ function spinPeople() {
     setTimeout(() => {
       const sm = document.getElementById('rSummary');
       const reason = mode === 'F'
-        ? `${target.name} ${target.title}: 중간 평가 기준 ${DL[bw.worst]} 최하위 (${bw.worstGrade}등급). 해고 위기 대상자로 지정.`
-        : `${target.name} ${target.title}: 중간 평가 기준 ${DL[bw.best]} 최고 (${bw.bestGrade}등급). 최적 인재로 확정.`;
+        ? `${target.name} ${target.title}: 4개 실무에서 직접 문제를 해결한 기록이 없습니다. 상황 전파는 인정하나, 이 자리에서는 실행이 필요합니다. 해고 위기 대상자로 지정합니다.`
+        : `${target.name} ${target.title}: 수학적 해결 능력과 창의적 발상을 동시에 보여준 유일한 인물입니다. 문제 풀이의 핵심 기여자로, 최적 인재로 확정합니다.`;
       sm.textContent = reason;
       sm.classList.add('show');
 
