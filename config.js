@@ -52,16 +52,16 @@ const CONFIG = {
   // 7대 지표 + 라운드 활동 반영된 종합 점수
   // ═══════════════════════════════════
   MID_SCORES: {
-    p1: { contribution:'A', competency:'A', collaboration:'B', crisis:'A', intuition:'B', ethics:'C', aiVerification:'B' },
-    p2: { contribution:'C', competency:'C', collaboration:'A', crisis:'C', intuition:'A', ethics:'C', aiVerification:'C' },
-    p3: { contribution:'C', competency:'C', collaboration:'A', crisis:'C', intuition:'B', ethics:'B', aiVerification:'D' },
-    p4: { contribution:'C', competency:'B', collaboration:'C', crisis:'B', intuition:'B', ethics:'A', aiVerification:'S' },
-    p5: { contribution:'A', competency:'S', collaboration:'B', crisis:'B', intuition:'A', ethics:'S', aiVerification:'A' },
-    p6: { contribution:'D', competency:'C', collaboration:'B', crisis:'D', intuition:'C', ethics:'B', aiVerification:'D' },
+    p1: { contribution:'A', competency:'A', collaboration:'A', crisis:'A', intuition:'B', ethics:'C', aiVerification:'B' },
+    p2: { contribution:'B', competency:'C', collaboration:'A', crisis:'C', intuition:'A', ethics:'C', aiVerification:'C' },
+    p3: { contribution:'B', competency:'B', collaboration:'A', crisis:'C', intuition:'B', ethics:'B', aiVerification:'D' },
+    p4: { contribution:'B', competency:'A', collaboration:'C', crisis:'B', intuition:'B', ethics:'A', aiVerification:'S' },
+    p5: { contribution:'A', competency:'S', collaboration:'B', crisis:'B', intuition:'A', ethics:'S', aiVerification:'S' },
+    p6: { contribution:'C', competency:'C', collaboration:'B', crisis:'D', intuition:'C', ethics:'B', aiVerification:'D' },
   },
   // 'auto' = 총점 자동계산, 직접 ID 지정도 가능
-  MID_F_ID: 'auto',
-  MID_S_ID: 'auto',
+  MID_F_ID: 'p3',   // 츠키 — AI 검증력 최하위, 도구에 의존하는 패턴
+  MID_S_ID: 'p4',   // 허성범 — 분석+창의 동시 발휘, 문제 풀이 핵심 기여
 
   // ═══════════════════════════════════
   // 최종평가 (전 라운드 종료 후)
